@@ -19,7 +19,7 @@ std::vector<std::vector<Chess>> board;
 
 void draw_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess)
 {
-	sf::CircleShape chess_shape(chess_diameter / 2.f, 30);
+	sf::CircleShape chess_shape(chess_diameter / 2.f, 50);
 	chess_shape.setOrigin(chess_diameter / 2.f, chess_diameter / 2.f);
 	chess_shape.setPosition(chess_offset + position.x * chess_offset, chess_offset + position.y * chess_offset);
 
@@ -63,6 +63,13 @@ void draw_board(sf::RenderWindow& window)
 		for (size_t x = 0; x < board[0].size(); x++)
 			if (board[x][y] != Chess::Null)
 				draw_chess(window, sf::Vector2i(x, y), board[x][y]);
+}
+
+void display(sf::RenderWindow& window)
+{
+	window.clear(sf::Color(242, 208, 75));
+	draw_board(window);
+	window.display();
 }
 
 std::optional<std::vector<sf::Vector2i>> get_five_chesses_in_a_row(sf::Vector2i position)
@@ -118,6 +125,14 @@ std::optional<std::vector<sf::Vector2i>> get_five_chesses_in_a_row(sf::Vector2i 
 	return std::nullopt;
 }
 
+void reset_board()
+{
+	board.clear();
+	board.resize(15);
+	for (auto& row : board)
+		row.resize(15);
+}
+
 int main()
 {
 	const unsigned int size = chess_offset * (14 + 2);
@@ -125,11 +140,9 @@ int main()
 	window.setSize({ size, size });
 	window.setFramerateLimit(144);
 
-	int index = 0;
+	reset_board();
 
-	board.resize(15);
-	for (auto& row : board)
-		row.resize(15);
+	int index = 0;
 
 	while (window.isOpen())
 	{
@@ -139,7 +152,7 @@ int main()
 				window.close();
 		}
 
-		if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+		if (window.hasFocus() && sf::Mouse::isButtonPressed(sf::Mouse::Left))
 		{
 			sf::Vector2i position = sf::Mouse::getPosition(window);
 			position.x = ((position.x - chess_offset) + (chess_offset / 2.f)) / chess_offset;
@@ -155,34 +168,35 @@ int main()
 			board[position.x][position.y] = chess;
 			index++;
 
-			auto chesses = get_five_chesses_in_a_row(position);
+			socket.send(reinterpret_cast<const void*>(&position), sizeof(position));
+
+			size_t received;
+			socket.receive(reinterpret_cast<void*>(&position), sizeof(position), &received);
+
+			const auto chesses = get_five_chesses_in_a_row(position);
 			if (chesses.has_value())
 			{
-				while (true)
+				for(int i = 0; i < 5; i++)
 				{
 					for (auto& position : chesses.value())
 						board[position.x][position.y] = Chess::Green;
 
-					window.clear(sf::Color(242, 208, 75));
-					draw_board(window);
-					window.display();
+					display(window);
 					sf::sleep(sf::seconds(0.5f));
 
 					for (auto& position : chesses.value())
 						board[position.x][position.y] = chess;
 
-					window.clear(sf::Color(242, 208, 75));
-					draw_board(window);
-					window.display();
+					display(window);
 					sf::sleep(sf::seconds(0.5f));
 				}
+
+				reset_board();
 			}
 
 			sf::sleep(sf::seconds(0.2f));
 		}
 
-		window.clear(sf::Color(242, 208, 75));
-		draw_board(window);
-		window.display();
+		display(window);
 	}
 }
