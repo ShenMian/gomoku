@@ -13,6 +13,9 @@ const float chess_spacing = 6;
 const float board_line_thickness = 2.f;
 const float chess_offset = chess_diameter + chess_spacing;
 
+const int max_steps = 15 * 15;
+
+int steps = 1;
 Status status = Status::Initial;
 Chess chess = Chess::Null;
 sf::Vector2i last_place_position = { -3, -3 };
@@ -27,7 +30,6 @@ void draw_mark(sf::RenderWindow& window)
 		chess_offset + last_place_position.y * chess_offset);
 	mark.setFillColor(sf::Color::Red);
 	window.draw(mark);
-
 }
 
 void draw_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess) {
@@ -92,6 +94,8 @@ get_five_chesses_in_a_row(sf::Vector2i position) {
 	for (int x = std::max(position.x - 4, 0); x < 15; x++) {
 		if (board[x][position.y] == chess)
 			chesses.emplace_back(x, position.y);
+		else
+			chesses.clear();
 		if (chesses.size() == 5)
 			return chesses;
 	}
@@ -100,6 +104,8 @@ get_five_chesses_in_a_row(sf::Vector2i position) {
 	for (int y = std::max(position.y - 4, 0); y < 15; y++) {
 		if (board[position.x][y] == chess)
 			chesses.emplace_back(position.x, y);
+		else
+			chesses.clear();
 		if (chesses.size() == 5)
 			return chesses;
 	}
@@ -112,6 +118,8 @@ get_five_chesses_in_a_row(sf::Vector2i position) {
 		for (; x < 15 && y < 15; x++, y++) {
 			if (board[x][y] == chess)
 				chesses.emplace_back(x, y);
+			else
+				chesses.clear();
 			if (chesses.size() == 5)
 				return chesses;
 		}
@@ -125,6 +133,8 @@ get_five_chesses_in_a_row(sf::Vector2i position) {
 		for (; x >= 0 && y < 15; x--, y++) {
 			if (board[x][y] == chess)
 				chesses.emplace_back(x, y);
+			else
+				chesses.clear();
 			if (chesses.size() == 5)
 				return chesses;
 		}
@@ -138,6 +148,7 @@ void reset_board() {
 	board.resize(15);
 	for (auto& row : board)
 		row.resize(15);
+	steps = 0;
 	status = Status::Initial;
 	chess = Chess::Null;
 	last_place_position = { -3, -3 };
@@ -147,6 +158,7 @@ void place_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess)
 {
 	board[position.x][position.y] = chess;
 	last_place_position = position;
+	steps++;
 
 	const auto chesses = get_five_chesses_in_a_row(position);
 	if (chesses.has_value()) {
@@ -166,6 +178,9 @@ void place_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess)
 
 		reset_board();
 	}
+
+	if(steps == max_steps)
+		reset_board();
 }
 
 int main() {
@@ -240,9 +255,8 @@ int main() {
 				packet.append(&position, sizeof(position));
 				const auto state = socket.send(packet);
 				assert(state == sf::Socket::Status::Done);
-				place_chess(window, position, chess);
-
 				status = Status::Wait;
+				place_chess(window, position, chess);
 			}
 		}
 
@@ -257,7 +271,6 @@ int main() {
 				if (chess == Chess::Null)
 					chess = Chess::White;
 				place_chess(window, position, chess == Chess::Black ? Chess::White : Chess::Black);
-
 				status = Status::Ready;
 			}
 		}
