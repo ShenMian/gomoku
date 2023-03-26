@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.12)
 
 project(gomoku CXX)
 
+set(BUILD_SHARED_LIBS FALSE)
+
 include(FetchContent)
 FetchContent_Declare(SFML
     GIT_REPOSITORY https://github.com/SFML/SFML.git
@@ -9,7 +11,7 @@ FetchContent_Declare(SFML
 FetchContent_MakeAvailable(SFML)
 
 add_executable(${PROJECT_NAME})
-target_sources(${PROJECT_NAME} PRIVATE src/main.cpp)
+target_sources(${PROJECT_NAME} PRIVATE src/main.cpp src/board.hpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE sfml-graphics sfml-network)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
