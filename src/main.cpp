@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 #include <cassert>
+#include <format>
 #include <iostream>
 #include <optional>
 
@@ -41,8 +42,9 @@ void place_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess)
 
 	for(int i = 0; i < 10; i++)
 	{
-		for(const auto& position : chesses.value())
-			board.place_chess(position, i % 2 == 0 ? Chess::Green : chess);
+		for(const auto& pos : chesses.value())
+			board.place_chess(pos, i % 2 == 0 ? Chess::Green : chess);
+		board.place_chess(position, i % 2 == 0 ? Chess::Green : chess);
 
 		window.clear(sf::Color(242, 208, 75));
 		board.draw(window);
@@ -53,14 +55,9 @@ void place_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess)
 	reset();
 }
 
-int main()
+int online(sf::RenderWindow& window)
 {
 	std::cout << R"(
-  _____                __       
- / ___/__  __ _  ___  / /____ __
-/ (_ / _ \/  ' \/ _ \/  '_/ // /
-\___/\___/_/_/_/\___/_/\_\\_,_/ 
-                                
           1. client
           2. server
 
@@ -87,17 +84,10 @@ int main()
 		assert(listener.accept(socket) == sf::Socket::Status::Done);
 	}
 	else
-	{
 		return 1;
-	}
 	socket.setBlocking(false);
 
-	const sf::Vector2u size(736u, 736u);
-	auto               window = sf::RenderWindow{{size.x, size.y}, "Gomoku"};
-	window.setSize(size);
-	window.setFramerateLimit(60);
-
-	reset();
+	window.setVisible(true);
 
 	while(window.isOpen())
 	{
@@ -111,17 +101,10 @@ int main()
 		{
 			if(window.hasFocus() && sf::Mouse::isButtonPressed(sf::Mouse::Left))
 			{
-				sf::Vector2i position = sf::Mouse::getPosition(window);
-
-				position.x = static_cast<int>((position.x - 46) + (46 / 2.f));
-				position.y = static_cast<int>((position.y - 46) + (46 / 2.f));
-				if(position.x < 0 || position.y < 0)
+				const auto result = board.window_to_board_position(sf::Mouse::getPosition(window));
+				if(!result.has_value())
 					continue;
-
-				position.x /= static_cast<int>(46);
-				position.y /= static_cast<int>(46);
-				if(position.x >= board.size().x || position.y >= board.size().y)
-					continue;
+				const auto position = result.value();
 
 				if(board.get_chess(position) != Chess::Null)
 					continue;
@@ -132,6 +115,7 @@ int main()
 				sf::Packet packet;
 				packet.append(&position, sizeof(position));
 				assert(socket.send(packet) == sf::Socket::Status::Done);
+
 				status = Status::Wait;
 				place_chess(window, position, chess);
 			}
@@ -145,8 +129,10 @@ int main()
 			{
 				const sf::Vector2i position = *static_cast<const sf::Vector2i*>(packet.getData());
 				assert(packet.getDataSize() == sizeof(sf::Vector2i));
+
 				if(chess == Chess::Null)
 					chess = Chess::White;
+
 				status = Status::Ready;
 				place_chess(window, position, chess == Chess::Black ? Chess::White : Chess::Black);
 			}
@@ -156,4 +142,81 @@ int main()
 		board.draw(window);
 		window.display();
 	}
+
+	return 0;
+}
+
+int offline(sf::RenderWindow& window)
+{
+	chess = Chess::Black;
+
+	window.setVisible(true);
+
+	while(window.isOpen())
+	{
+		for(auto event = sf::Event{}; window.pollEvent(event);)
+		{
+			if(event.type == sf::Event::Closed)
+				window.close();
+		}
+
+		if(window.hasFocus() && sf::Mouse::isButtonPressed(sf::Mouse::Left))
+		{
+			const auto result = board.window_to_board_position(sf::Mouse::getPosition(window));
+			if(!result.has_value())
+				continue;
+			const auto position = result.value();
+
+			if(board.get_chess(position) != Chess::Null)
+				continue;
+
+			if(chess == Chess::Null)
+				chess = Chess::Black;
+
+			place_chess(window, position, chess);
+
+			chess = chess == Chess::Black ? Chess::White : Chess::Black;
+		}
+
+		window.clear(sf::Color(242, 208, 75));
+		board.draw(window);
+		window.display();
+	}
+
+	return 0;
+}
+
+int main()
+{
+	reset();
+
+	const sf::Vector2u size(board.position().x * 2 + (board.size().x - 1) * 46,
+	                        board.position().y * 2 + (board.size().y - 1) * 46);
+	auto               window = sf::RenderWindow{{size.x, size.y}, "Gomoku", sf::Style::Close};
+	window.setVisible(false);
+	window.setSize(size);
+	window.setFramerateLimit(60);
+
+
+	std::cout << R"(
+  _____                __       
+ / ___/__  __ _  ___  / /____ __
+/ (_ / _ \/  ' \/ _ \/  '_/ // /
+\___/\___/_/_/_/\___/_/\_\\_,_/ 
+)";
+	std::cout << R"(
+          1. online
+          2. offline
+
+)";
+
+	std::string choice;
+	std::getline(std::cin, choice);
+
+	if(choice == "1")
+		online(window);
+	else if(choice == "2")
+		return offline(window);
+	else
+		return 1;
 }
