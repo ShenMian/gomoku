@@ -13,8 +13,9 @@ enum class Status
 	Initial
 };
 
-Status status = Status::Initial;
-Chess  chess  = Chess::Null;
+Status       status = Status::Initial;
+Chess        chess  = Chess::Null;
+sf::Vector2i cursor_position;
 
 Board board;
 
@@ -23,6 +24,16 @@ void reset()
 	status = Status::Initial;
 	chess  = Chess::Null;
 	board.reset();
+	cursor_position = board.size() / 2;
+}
+
+void draw_cursor(sf::RenderWindow& window)
+{
+	sf::CircleShape cursor(40 / 2.f, 50);
+	cursor.setOrigin(cursor.getRadius(), cursor.getRadius());
+	cursor.setFillColor(sf::Color(255 / 2, 255 / 2, 255 / 2, 180));
+	cursor.setPosition(board.position().x + cursor_position.x * 46, board.position().y + cursor_position.y * 46);
+	window.draw(cursor);
 }
 
 void place_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess)
@@ -53,6 +64,91 @@ void place_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess)
 	}
 
 	reset();
+}
+
+void handle_mouse_input(sf::RenderWindow& window)
+{
+	const auto result = board.window_to_board_position(sf::Mouse::getPosition(window));
+	if(result.has_value())
+	{
+		const auto position = result.value();
+		cursor_position     = position;
+	}
+}
+
+void handle_keyboard_input()
+{
+	static sf::Clock clock;
+	if(clock.getElapsedTime() < sf::seconds(0.2f))
+		return;
+
+	if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
+	{
+		cursor_position.y = std::clamp(cursor_position.y - 1, 0, board.size().y - 1);
+		clock.restart();
+	}
+	if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
+	{
+		cursor_position.y = std::clamp(cursor_position.y + 1, 0, board.size().y - 1);
+		clock.restart();
+	}
+	if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+	{
+		cursor_position.x = std::clamp(cursor_position.x - 1, 0, board.size().x - 1);
+		clock.restart();
+	}
+	if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+	{
+		cursor_position.x = std::clamp(cursor_position.x + 1, 0, board.size().x - 1);
+		clock.restart();
+	}
+}
+
+void handle_input(sf::RenderWindow& window)
+{
+	handle_mouse_input(window);
+	handle_keyboard_input();
+
+	static sf::Clock clock;
+	if(clock.getElapsedTime() < sf::seconds(0.5f))
+		return;
+
+	if(!sf::Mouse::isButtonPressed(sf::Mouse::Left) && !sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+		return;
+
+	clock.restart();
+
+	if(board.get_chess(cursor_position) != Chess::Null)
+		return;
+
+	if(chess == Chess::Null)
+		chess = Chess::Black;
+
+	place_chess(window, cursor_position, chess);
+
+	chess = chess == Chess::Black ? Chess::White : Chess::Black;
+}
+
+void online_handle_input(sf::RenderWindow& window, sf::TcpSocket& socket)
+{
+	handle_mouse_input(window);
+	handle_keyboard_input();
+
+	if(sf::Mouse::isButtonPressed(sf::Mouse::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+	{
+		if(board.get_chess(cursor_position) != Chess::Null)
+			return;
+
+		if(chess == Chess::Null)
+			chess = Chess::Black;
+
+		sf::Packet packet;
+		packet.append(&cursor_position, sizeof(cursor_position));
+		assert(socket.send(packet) == sf::Socket::Status::Done);
+
+		status = Status::Wait;
+		place_chess(window, cursor_position, chess);
+	}
 }
 
 int online(sf::RenderWindow& window)
@@ -99,25 +195,9 @@ int online(sf::RenderWindow& window)
 
 		if(status == Status::Ready || status == Status::Initial)
 		{
-			if(window.hasFocus() && sf::Mouse::isButtonPressed(sf::Mouse::Left))
+			if(window.hasFocus())
 			{
-				const auto result = board.window_to_board_position(sf::Mouse::getPosition(window));
-				if(!result.has_value())
-					continue;
-				const auto position = result.value();
-
-				if(board.get_chess(position) != Chess::Null)
-					continue;
-
-				if(chess == Chess::Null)
-					chess = Chess::Black;
-
-				sf::Packet packet;
-				packet.append(&position, sizeof(position));
-				assert(socket.send(packet) == sf::Socket::Status::Done);
-
-				status = Status::Wait;
-				place_chess(window, position, chess);
+				online_handle_input(window, socket);
 			}
 		}
 
@@ -140,6 +220,7 @@ int online(sf::RenderWindow& window)
 
 		window.clear(sf::Color(242, 208, 75));
 		board.draw(window);
+		draw_cursor(window);
 		window.display();
 	}
 
@@ -160,26 +241,14 @@ int offline(sf::RenderWindow& window)
 				window.close();
 		}
 
-		if(window.hasFocus() && sf::Mouse::isButtonPressed(sf::Mouse::Left))
+		if(window.hasFocus())
 		{
-			const auto result = board.window_to_board_position(sf::Mouse::getPosition(window));
-			if(!result.has_value())
-				continue;
-			const auto position = result.value();
-
-			if(board.get_chess(position) != Chess::Null)
-				continue;
-
-			if(chess == Chess::Null)
-				chess = Chess::Black;
-
-			place_chess(window, position, chess);
-
-			chess = chess == Chess::Black ? Chess::White : Chess::Black;
+			handle_input(window);
 		}
 
 		window.clear(sf::Color(242, 208, 75));
 		board.draw(window);
+		draw_cursor(window);
 		window.display();
 	}
 
@@ -203,6 +272,7 @@ int main()
  / ___/__  __ _  ___  / /____ __
 / (_ / _ \/  ' \/ _ \/  '_/ // /
 \___/\___/_/_/_/\___/_/\_\\_,_/ 
+          Free-style
 )";
 	std::cout << R"(
           1. online

@@ -56,8 +56,11 @@ public:
 	void place_chess(sf::Vector2i position, Chess chess)
 	{
 		board[position.x][position.y] = chess;
-		last_place_position_          = position;
-		steps_++;
+		if(chess == Chess::Black || chess == Chess::White)
+		{
+			last_place_position_ = position;
+			steps_++;
+		}
 	}
 
 	std::optional<sf::Vector2i> window_to_board_position(sf::Vector2i position) const
@@ -148,7 +151,7 @@ public:
 			row.resize(size_.y);
 
 		steps_               = 1;
-		last_place_position_ = {-9, -9};
+		last_place_position_ = {-1, -1};
 	}
 
 	const auto& position() const noexcept { return position_; }
@@ -157,6 +160,8 @@ public:
 private:
 	void draw_mark(sf::RenderWindow& window)
 	{
+		if(last_place_position_.x < 0 || last_place_position_.y < 0)
+			return;
 		sf::CircleShape mark(chess_diameter_ / 4.f / 2.f, 3);
 		mark.setOrigin(mark.getRadius(), mark.getRadius());
 		mark.setPosition(position_.x + last_place_position_.x * chess_offset_,
