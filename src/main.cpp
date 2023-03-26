@@ -1,209 +1,59 @@
-﻿#include <SFML/Graphics.hpp>
+﻿#include "board.hpp"
+#include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
+#include <cassert>
+#include <cmath>
 #include <iostream>
 #include <optional>
 
-#include <cassert>
-
-enum class Chess { Null, Black, White, Green };
 enum class Status { Ready, Wait, Initial };
 
-const float chess_diameter = 40;
-const float chess_spacing = 6;
-const float chess_offset = chess_diameter + chess_spacing;
-
-const sf::Vector2i board_size = { 15, 15 };
-// const sf::Vector2i board_size = { 17, 17 };
-const float board_line_thickness = 2.f;
-
-const int max_steps = board_size.x * board_size.y;
-
-int steps = 1;
 Status status = Status::Initial;
 Chess chess = Chess::Null;
-sf::Vector2i last_place_position = { -3, -3 };
 
-std::vector<std::vector<Chess>> board;
+Board board;
 
-void draw_mark(sf::RenderWindow& window)
-{
-	sf::CircleShape mark(chess_diameter / 4.f / 2.f, 3);
-	mark.setOrigin(mark.getRadius(), mark.getRadius());
-	mark.setPosition(chess_offset + last_place_position.x * chess_offset,
-		chess_offset + last_place_position.y * chess_offset);
-	mark.setFillColor(sf::Color::Red);
-	window.draw(mark);
+sf::Vector2i normalize(const sf::Vector2i &v) {
+  const float norm = sqrt((v.x * v.x) + (v.y * v.y));
+  if (norm == 0)
+    return v;
+  return sf::Vector2i(v.x / norm, v.y / norm);
 }
 
-void draw_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess) {
-	sf::CircleShape chess_shape(chess_diameter / 2.f, 50);
-	chess_shape.setOrigin(chess_shape.getRadius(), chess_shape.getRadius());
-	chess_shape.setPosition(chess_offset + position.x * chess_offset,
-		chess_offset + position.y * chess_offset);
-
-	switch (chess) {
-	case Chess::White:
-		chess_shape.setFillColor(sf::Color::White);
-		break;
-
-	case Chess::Black:
-		chess_shape.setFillColor(sf::Color::Black);
-		break;
-
-	case Chess::Green:
-		chess_shape.setFillColor(sf::Color::Green);
-		break;
-	}
-
-	window.draw(chess_shape);
+void reset() {
+  status = Status::Initial;
+  chess = Chess::Null;
+  board.reset();
 }
 
-void draw_board(sf::RenderWindow& window) {
-	for (int y = 1; y <= board_size.y; y++) {
-		sf::RectangleShape line(
-			sf::Vector2f((board_size.x - 1) * chess_offset, board_line_thickness));
-		line.setOrigin(0, line.getSize().y / 2);
-		line.setPosition(chess_offset, y * chess_offset);
-		line.setFillColor(sf::Color::Black);
-		window.draw(line);
-	}
+void place_chess(sf::RenderWindow &window, sf::Vector2i position, Chess chess) {
+  board.place_chess(position, chess);
 
-	for (int x = 1; x <= board_size.x; x++) {
-		sf::RectangleShape line(
-			sf::Vector2f(board_line_thickness, (board_size.y - 1) * chess_offset));
-		line.setOrigin(line.getSize().x / 2, 0);
-		line.setPosition(x * chess_offset, chess_offset);
-		line.setFillColor(sf::Color::Black);
-		window.draw(line);
-	}
+  if (board.is_full()) {
+    sf::sleep(sf::seconds(5.f));
+    reset();
+    return;
+  }
 
-	sf::CircleShape point(5.f, 10);
-	point.setOrigin(point.getRadius(), point.getRadius());
-	point.setFillColor(sf::Color::Black);
-	point.setPosition(3 * chess_offset + chess_offset, 3 * chess_offset + chess_offset);
-	window.draw(point);
-	point.setPosition((board_size.x - 4)* chess_offset + chess_offset, 3 * chess_offset + chess_offset);
-	window.draw(point);
-	point.setPosition(3 * chess_offset + chess_offset, (board_size.y - 4)* chess_offset + chess_offset);
-	window.draw(point);
-	point.setPosition((board_size.x - 4)* chess_offset + chess_offset, (board_size.y - 4)* chess_offset + chess_offset);
-	window.draw(point);
-	point.setPosition(board_size.x / 2 * chess_offset + chess_offset, board_size.y / 2 * chess_offset + chess_offset);
-	window.draw(point);
+  const auto chesses = board.get_five_chesses_in_a_row(position);
+  if (!chesses.has_value())
+    return;
 
-	for (int y = 0; y < board.size(); y++)
-		for (int x = 0; x < board[0].size(); x++)
-			if (board[x][y] != Chess::Null)
-				draw_chess(window, { x, y }, board[x][y]);
+  for (int i = 0; i < 10; i++) {
+    for (const auto &position : chesses.value())
+      board.place_chess(position, i % 2 == 0 ? Chess::Green : chess);
 
-	draw_mark(window);
-}
+    window.clear(sf::Color(242, 208, 75));
+    board.draw(window);
+    window.display();
+    sf::sleep(sf::seconds(0.5f));
+  }
 
-void display(sf::RenderWindow& window) {
-	window.clear(sf::Color(242, 208, 75));
-	draw_board(window);
-	window.display();
-}
-
-std::optional<std::vector<sf::Vector2i>>
-get_five_chesses_in_a_row(sf::Vector2i position) {
-	std::vector<sf::Vector2i> chesses;
-	const Chess chess = board[position.x][position.y];
-
-	for (int x = std::max(position.x - 4, 0); x < board_size.x; x++) {
-		if (board[x][position.y] == chess)
-			chesses.emplace_back(x, position.y);
-		else
-			chesses.clear();
-		if (chesses.size() == 5)
-			return chesses;
-	}
-	chesses.clear();
-
-	for (int y = std::max(position.y - 4, 0); y < board_size.y; y++) {
-		if (board[position.x][y] == chess)
-			chesses.emplace_back(position.x, y);
-		else
-			chesses.clear();
-		if (chesses.size() == 5)
-			return chesses;
-	}
-	chesses.clear();
-
-	{
-		int x = position.x, y = position.y;
-		while (x > 0 && y > 0)
-			x--, y--;
-		for (; x < board_size.x && y < board_size.y; x++, y++) {
-			if (board[x][y] == chess)
-				chesses.emplace_back(x, y);
-			else
-				chesses.clear();
-			if (chesses.size() == 5)
-				return chesses;
-		}
-		chesses.clear();
-	}
-
-	{
-		int x = position.x, y = position.y;
-		while (x < board_size.x - 1 && y > 0)
-			x++, y--;
-		for (; x >= 0 && y < board_size.y; x--, y++) {
-			if (board[x][y] == chess)
-				chesses.emplace_back(x, y);
-			else
-				chesses.clear();
-			if (chesses.size() == 5)
-				return chesses;
-		}
-	}
-
-	return std::nullopt;
-}
-
-void reset_board() {
-	board.clear();
-	board.resize(board_size.x);
-	for (auto& row : board)
-		row.resize(board_size.y);
-	steps = 0;
-	status = Status::Initial;
-	chess = Chess::Null;
-	last_place_position = { -3, -3 };
-}
-
-void place_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess)
-{
-	board[position.x][position.y] = chess;
-	last_place_position = position;
-	steps++;
-
-	const auto chesses = get_five_chesses_in_a_row(position);
-	if (chesses.has_value()) {
-		for (int i = 0; i < 5; i++) {
-			for (auto& position : chesses.value())
-				board[position.x][position.y] = Chess::Green;
-
-			display(window);
-			sf::sleep(sf::seconds(0.5f));
-
-			for (auto& position : chesses.value())
-				board[position.x][position.y] = chess;
-
-			display(window);
-			sf::sleep(sf::seconds(0.5f));
-		}
-
-		reset_board();
-	}
-
-	if(steps == max_steps)
-		reset_board();
+  reset();
 }
 
 int main() {
-	std::cout << R"(
+  std::cout << R"(
   _____                __       
  / ___/__  __ _  ___  / /____ __
 / (_ / _ \/  ' \/ _ \/  '_/ // /
@@ -213,87 +63,86 @@ int main() {
           2. server
 
 )";
-	std::string choice;
-	std::getline(std::cin, choice);
+  std::string choice;
+  std::getline(std::cin, choice);
 
-	sf::TcpSocket socket;
+  sf::TcpSocket socket;
 
-	if (choice == "1") {
-		std::cout << "host ip: ";
-		std::string ip;
-		std::cin >> ip;
-		while (socket.connect(ip, 1234) != sf::Socket::Status::Done)
-			std::cout << "retrying...\n";
-	}
-	else if (choice == "2") {
-		std::cout << "waiting for connections...\n";
-		sf::TcpListener listener;
-		listener.listen(1234);
-		listener.accept(socket);
-	}
-	else {
-		return 1;
-	}
-	socket.setBlocking(false);
+  if (choice == "1") {
+    std::cout << "host ip: ";
+    std::string ip;
+    std::cin >> ip;
+    while (socket.connect(ip, 1234) != sf::Socket::Status::Done)
+      std::cout << "retrying...\n";
+  } else if (choice == "2") {
+    std::cout << "local ip: " << sf::IpAddress::getLocalAddress() << "\n";
+    std::cout << "waiting for connections...\n";
+    sf::TcpListener listener;
+    listener.listen(1234);
+    assert(listener.accept(socket) == sf::Socket::Status::Done);
+  } else {
+    return 1;
+  }
+  socket.setBlocking(false);
 
-	const sf::Vector2u size(chess_offset * (board_size.x + 1), chess_offset * (board_size.y + 1));
-	auto window = sf::RenderWindow{ {size.x, size.y}, "Gomoku" };
-	window.setSize(size);
-	window.setFramerateLimit(60);
+  const sf::Vector2u size(736u, 736u);
+  auto window = sf::RenderWindow{{size.x, size.y}, "Gomoku"};
+  window.setSize(size);
+  window.setFramerateLimit(60);
 
-	reset_board();
+  reset();
 
-	while (window.isOpen()) {
-		for (auto event = sf::Event{}; window.pollEvent(event);) {
-			if (event.type == sf::Event::Closed)
-				window.close();
-		}
+  while (window.isOpen()) {
+    for (auto event = sf::Event{}; window.pollEvent(event);) {
+      if (event.type == sf::Event::Closed)
+        window.close();
+    }
 
-		if (status == Status::Ready || status == Status::Initial)
-		{
-			if (window.hasFocus() && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-				sf::Vector2i position = sf::Mouse::getPosition(window);
+    if (status == Status::Ready || status == Status::Initial) {
+      if (window.hasFocus() && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+        sf::Vector2i position = sf::Mouse::getPosition(window);
 
-				position.x = static_cast<int>((position.x - chess_offset) + (chess_offset / 2.f));
-				position.y = static_cast<int>((position.y - chess_offset) + (chess_offset / 2.f));
-				if (position.x < 0 || position.y < 0)
-					continue;
+        position.x = static_cast<int>((position.x - 46) + (46 / 2.f));
+        position.y = static_cast<int>((position.y - 46) + (46 / 2.f));
+        if (position.x < 0 || position.y < 0)
+          continue;
 
-				position.x /= static_cast<int>(chess_offset);
-				position.y /= static_cast<int>(chess_offset);
-				if (position.x >= board_size.x || position.y >= board_size.y)
-					continue;
+        position.x /= static_cast<int>(46);
+        position.y /= static_cast<int>(46);
+        if (position.x >= board.size().x || position.y >= board.size().y)
+          continue;
 
-				if (board[position.x][position.y] != Chess::Null)
-					continue;
+        if (board.get_chess(position) != Chess::Null)
+          continue;
 
-				if (chess == Chess::Null)
-					chess = Chess::Black;
+        if (chess == Chess::Null)
+          chess = Chess::Black;
 
-				sf::Packet packet;
-				packet.append(&position, sizeof(position));
-				const auto state = socket.send(packet);
-				assert(state == sf::Socket::Status::Done);
-				status = Status::Wait;
-				place_chess(window, position, chess);
-			}
-		}
+        sf::Packet packet;
+        packet.append(&position, sizeof(position));
+        assert(socket.send(packet) == sf::Socket::Status::Done);
+        status = Status::Wait;
+        place_chess(window, position, chess);
+      }
+    }
 
-		if (status == Status::Wait || status == Status::Initial)
-		{
-			sf::Packet packet;
-			socket.receive(packet);
-			if (!packet.endOfPacket())
-			{
-				const sf::Vector2i position = *static_cast<const sf::Vector2i*>(packet.getData());
-				assert(packet.getDataSize() == sizeof(sf::Vector2i));
-				if (chess == Chess::Null)
-					chess = Chess::White;
-				status = Status::Ready;
-				place_chess(window, position, chess == Chess::Black ? Chess::White : Chess::Black);
-			}
-		}
+    if (status == Status::Wait || status == Status::Initial) {
+      sf::Packet packet;
+      socket.receive(packet);
+      if (!packet.endOfPacket()) {
+        const sf::Vector2i position =
+            *static_cast<const sf::Vector2i *>(packet.getData());
+        assert(packet.getDataSize() == sizeof(sf::Vector2i));
+        if (chess == Chess::Null)
+          chess = Chess::White;
+        status = Status::Ready;
+        place_chess(window, position,
+                    chess == Chess::Black ? Chess::White : Chess::Black);
+      }
+    }
 
-		display(window);
-	}
+    window.clear(sf::Color(242, 208, 75));
+    board.draw(window);
+    window.display();
+  }
 }
