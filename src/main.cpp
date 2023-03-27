@@ -12,16 +12,26 @@ enum class Status
 	Initial
 };
 
-Status       status = Status::Initial;
-Chess        chess  = Chess::Null;
+Status       chess_status = Status::Initial;
+Chess        chess        = Chess::Null;
 sf::Vector2i cursor_position;
 
 Board board;
 
+sf::Packet& operator<<(sf::Packet& packet, const sf::Vector2i& position)
+{
+	return packet << position.x << position.y;
+}
+
+sf::Packet& operator>>(sf::Packet& packet, sf::Vector2i& position)
+{
+	return packet >> position.x >> position.y;
+}
+
 void reset()
 {
-	status = Status::Initial;
-	chess  = Chess::Null;
+	chess_status = Status::Initial;
+	chess        = Chess::Null;
 	board.reset();
 	cursor_position = board.size() / 2;
 }
@@ -161,7 +171,8 @@ int online(sf::RenderWindow& window)
 		std::cout << "waiting for connections...\n";
 		sf::TcpListener listener;
 		listener.listen(port);
-		assert(listener.accept(socket) == sf::Socket::Status::Done);
+		while(listener.accept(socket) != sf::Socket::Status::Done)
+			std::cout << "retrying...\n";
 	}
 	else
 		return 1;
@@ -177,37 +188,40 @@ int online(sf::RenderWindow& window)
 				window.close();
 		}
 
-		if(status == Status::Ready || status == Status::Initial)
+		if(chess_status == Status::Ready || chess_status == Status::Initial)
 		{
 			if(window.hasFocus() && handle_input(window))
 			{
 				sf::Packet packet;
-				packet.append(&cursor_position, sizeof(cursor_position));
-				assert(socket.send(packet) == sf::Socket::Status::Done);
+				packet << cursor_position;
+				const auto status = socket.send(packet);
+				assert(status == sf::Socket::Status::Done);
 
-				status = Status::Wait;
+				chess_status = Status::Wait;
 
 				handle_over(window, cursor_position);
 			}
 		}
 
-		if(status == Status::Wait || status == Status::Initial)
+		if(chess_status == Status::Wait || chess_status == Status::Initial)
 		{
 			sf::Packet packet;
-			socket.receive(packet);
-			if(!packet.endOfPacket())
+			const auto status = socket.receive(packet);
+			if(status == sf::Socket::Done)
 			{
-				const sf::Vector2i position = *static_cast<const sf::Vector2i*>(packet.getData());
-				assert(packet.getDataSize() == sizeof(sf::Vector2i));
+				sf::Vector2i position;
+				packet >> position;
 
 				if(chess == Chess::Null)
 					chess = Chess::White;
 
-				status = Status::Ready;
+				chess_status = Status::Ready;
 
 				board.place_chess(position, chess == Chess::Black ? Chess::White : Chess::Black);
 				handle_over(window, position);
 			}
+			else if(status == sf::Socket::Disconnected)
+				return 1;
 		}
 
 		window.clear(sf::Color(242, 208, 75));
