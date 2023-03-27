@@ -12,8 +12,8 @@ enum class Status
 	Initial
 };
 
-Status       chess_status = Status::Initial;
-Chess        chess        = Chess::Null;
+Status       player_status = Status::Initial;
+Chess        chess         = Chess::Null;
 sf::Vector2i cursor_position;
 
 Board board;
@@ -30,8 +30,8 @@ sf::Packet& operator>>(sf::Packet& packet, sf::Vector2i& position)
 
 void reset()
 {
-	chess_status = Status::Initial;
-	chess        = Chess::Null;
+	player_status = Status::Initial;
+	chess         = Chess::Null;
 	board.reset();
 	cursor_position = board.size() / 2;
 }
@@ -75,10 +75,9 @@ void handle_over(sf::RenderWindow& window, sf::Vector2i position)
 	reset();
 }
 
-void handle_mouse_input(sf::RenderWindow& window)
+void handle_mouse_input(const sf::RenderWindow& window)
 {
-	const auto result = board.window_to_board_position(sf::Mouse::getPosition(window));
-	if(result.has_value())
+	if(const auto result = board.window_to_board_position(sf::Mouse::getPosition(window)); result.has_value())
 	{
 		const auto position = result.value();
 		cursor_position     = position;
@@ -143,41 +142,8 @@ bool handle_input(sf::RenderWindow& window)
 	return false;
 }
 
-int online(sf::RenderWindow& window)
+int online(sf::RenderWindow& window, sf::TcpSocket& socket)
 {
-	const uint16_t port = 1234;
-
-	std::cout << R"(
-          1. client
-          2. server
-
-)";
-	std::string choice;
-	std::getline(std::cin, choice);
-
-	sf::TcpSocket socket;
-
-	if(choice == "1")
-	{
-		std::cout << "host ip: ";
-		std::string ip;
-		std::cin >> ip;
-		while(socket.connect(ip, port) != sf::Socket::Status::Done)
-			std::cout << "retrying...\n";
-	}
-	else if(choice == "2")
-	{
-		std::cout << "local ip: " << sf::IpAddress::getLocalAddress() << "\n";
-		std::cout << "waiting for connections...\n";
-		sf::TcpListener listener;
-		listener.listen(port);
-		while(listener.accept(socket) != sf::Socket::Status::Done)
-			std::cout << "retrying...\n";
-	}
-	else
-		return 1;
-	socket.setBlocking(false);
-
 	window.setVisible(true);
 
 	while(window.isOpen())
@@ -188,7 +154,7 @@ int online(sf::RenderWindow& window)
 				window.close();
 		}
 
-		if(chess_status == Status::Ready || chess_status == Status::Initial)
+		if(player_status == Status::Ready || player_status == Status::Initial)
 		{
 			if(window.hasFocus() && handle_input(window))
 			{
@@ -197,17 +163,16 @@ int online(sf::RenderWindow& window)
 				const auto status = socket.send(packet);
 				assert(status == sf::Socket::Status::Done);
 
-				chess_status = Status::Wait;
+				player_status = Status::Wait;
 
 				handle_over(window, cursor_position);
 			}
 		}
 
-		if(chess_status == Status::Wait || chess_status == Status::Initial)
+		if(player_status == Status::Wait || player_status == Status::Initial)
 		{
 			sf::Packet packet;
-			const auto status = socket.receive(packet);
-			if(status == sf::Socket::Done)
+			if(const auto status = socket.receive(packet) ; status == sf::Socket::Done)
 			{
 				sf::Vector2i position;
 				packet >> position;
@@ -215,13 +180,16 @@ int online(sf::RenderWindow& window)
 				if(chess == Chess::Null)
 					chess = Chess::White;
 
-				chess_status = Status::Ready;
+				player_status = Status::Ready;
 
 				board.place_chess(position, chess == Chess::Black ? Chess::White : Chess::Black);
 				handle_over(window, position);
 			}
 			else if(status == sf::Socket::Disconnected)
+			{
+				std::cout << "The network connection has been lost\n";
 				return 1;
+			}
 		}
 
 		window.clear(sf::Color(242, 208, 75));
@@ -291,7 +259,42 @@ int main()
 	std::getline(std::cin, choice);
 
 	if(choice == "1")
-		online(window);
+	{
+		const uint16_t port = 1234;
+
+		std::cout << R"(
+          1. client
+          2. server
+
+)";
+		std::string choice;
+		std::getline(std::cin, choice);
+
+		sf::TcpSocket socket;
+
+		if(choice == "1")
+		{
+			std::cout << "host ip: ";
+			std::string ip;
+			std::cin >> ip;
+			while(socket.connect(ip, port) != sf::Socket::Status::Done)
+				std::cout << "retrying...\n";
+		}
+		else if(choice == "2")
+		{
+			std::cout << "local ip: " << sf::IpAddress::getLocalAddress() << "\n";
+			std::cout << "waiting for connections...\n";
+			sf::TcpListener listener;
+			listener.listen(port);
+			while(listener.accept(socket) != sf::Socket::Status::Done)
+				std::cout << "retrying...\n";
+		}
+		else
+			return 1;
+		socket.setBlocking(false);
+
+		online(window, socket);
+	}
 	else if(choice == "2")
 		return offline(window);
 	else

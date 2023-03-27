@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include <SFML/Graphics.hpp>
+#include <array>
 #include <cassert>
 #include <optional>
-#include <tuple>
 
 enum class Chess
 {
@@ -18,7 +18,7 @@ class Board
 public:
 	Board(sf::Vector2i size = {15, 15}) : size_(size), max_steps_(size.x * size.y) { reset(); }
 
-	void draw(sf::RenderWindow& window)
+	void draw(sf::RenderWindow& window) const
 	{
 		sf::RectangleShape board_shape({(size_.x - 1) * chess_offset_, (size_.y - 1) * chess_offset_});
 		board_shape.setFillColor(sf::Color(242, 208, 75));
@@ -82,62 +82,37 @@ public:
 
 	std::optional<std::vector<sf::Vector2i>> get_five_chesses_in_a_row(sf::Vector2i position)
 	{
-		std::vector<sf::Vector2i> chesses;
-		const Chess               chess = board[position.x][position.y];
+		const Chess chess = board[position.x][position.y];
 
-		for(int x = std::max(position.x - 4, 0); x < size_.x; x++)
+		sf::Vector2i directions[8] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, -1}, {1, 1}, {-1, 1}, {1, -1}};
+		for(int i = 0; i < 8; i += 2)
 		{
-			if(board[x][position.y] == chess)
-				chesses.emplace_back(x, position.y);
-			else
-				chesses.clear();
-			if(chesses.size() == 5)
-				return chesses;
-		}
-		chesses.clear();
+			std::vector<sf::Vector2i> chesses;
 
-		for(int y = std::max(position.y - 4, 0); y < size_.y; y++)
-		{
-			if(board[position.x][y] == chess)
-				chesses.emplace_back(position.x, y);
-			else
-				chesses.clear();
-			if(chesses.size() == 5)
-				return chesses;
-		}
-		chesses.clear();
+			auto add_chesses_on_direction = [&](sf::Vector2i direction) {
+				for(int j = 1; j <= 4; j++)
+				{
+					const sf::Vector2i pos = position + direction * j;
+					if(pos.x < 0 || pos.x >= size_.x || pos.y < 0 || pos.y >= size_.y)
+						break;
 
-		{
-			int x = position.x, y = position.y;
-			while(x > 0 && y > 0)
-				x--, y--;
-			for(; x < size_.x && y < size_.y; x++, y++)
+					if(board[pos.x][pos.y] == chess)
+						chesses.emplace_back(pos.x, pos.y);
+					else
+						break;
+				}
+			};
+
+			add_chesses_on_direction(directions[i]);
+			add_chesses_on_direction(directions[i + 1]);
+
+			if(chesses.size() >= 4)
 			{
-				if(board[x][y] == chess)
-					chesses.emplace_back(x, y);
-				else
-					chesses.clear();
-				if(chesses.size() == 5)
-					return chesses;
-			}
-			chesses.clear();
-		}
-
-		{
-			int x = position.x, y = position.y;
-			while(x < size_.x - 1 && y > 0)
-				x++, y--;
-			for(; x >= 0 && y < size_.y; x--, y++)
-			{
-				if(board[x][y] == chess)
-					chesses.emplace_back(x, y);
-				else
-					chesses.clear();
-				if(chesses.size() == 5)
-					return chesses;
+				// chesses.resize(4);
+				chesses.push_back(position);
+				return chesses;
 			}
 		}
-
 		return std::nullopt;
 	}
 
@@ -158,7 +133,7 @@ public:
 	const auto& size() const noexcept { return size_; }
 
 private:
-	void draw_mark(sf::RenderWindow& window)
+	void draw_mark(sf::RenderWindow& window) const
 	{
 		if(last_place_position_.x < 0 || last_place_position_.y < 0)
 			return;
@@ -170,7 +145,7 @@ private:
 		window.draw(mark);
 	}
 
-	void draw_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess)
+	void draw_chess(sf::RenderWindow& window, sf::Vector2i position, Chess chess) const
 	{
 		sf::CircleShape chess_shape(chess_diameter_ / 2.f, 50);
 		chess_shape.setOrigin(chess_shape.getRadius(), chess_shape.getRadius());
@@ -197,7 +172,7 @@ private:
 		window.draw(chess_shape);
 	}
 
-	void draw_stars(sf::RenderWindow& window)
+	void draw_stars(sf::RenderWindow& window) const
 	{
 		sf::CircleShape star(5.f, 10);
 		star.setOrigin(star.getRadius(), star.getRadius());
