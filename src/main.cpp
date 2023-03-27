@@ -2,7 +2,6 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 #include <cassert>
-#include <format>
 #include <iostream>
 #include <optional>
 
@@ -136,7 +135,7 @@ bool handle_input(sf::RenderWindow& window)
 
 int online(sf::RenderWindow& window)
 {
-	const uint8_t port = 1234;
+	const uint16_t port = 1234;
 
 	std::cout << R"(
           1. client
