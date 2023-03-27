@@ -1,0 +1,50 @@
+﻿name: Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    name: ${{matrix.os}}
+    runs-on: ${{matrix.os}}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup enviroment (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt install libudev-dev libx11-dev libxrandr-dev libgl1-mesa-dev libalut-dev libvorbis-dev libsndfile1-dev libsfml-dev
+
+      - name: Setup clang (Windows)
+        if: matrix.os == 'windows-latest'
+        run: echo "PATH=$PATH:C:/msys64/mingw64/bin" >> $GITHUB_ENV
+
+      - name: Setup ninja (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt install ninja-build
+
+      - name: Setup cppkg
+        run: cargo install --git https://github.com/ShenMian/cppkg
+
+      - name: Build (Release)
+        run: cppkg build -r
+
+      - name: Upload binaries (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: gomoku-windows
+          path: target/release/gomoku.exe
+
+      - name: Upload binaries (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: gomoku-ubuntu
+          path: target/release/gomoku
