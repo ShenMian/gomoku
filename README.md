@@ -21,6 +21,6 @@ The rules are **free-style** and there are no forbidden moves. Players can decid
 
 ## Screenshot
 
-![Screenshot](docs/screenshot.png)  
+<p align="center"><img src="docs/screenshot.png" width=50% height=50%></p>
 
 [SFML]: https://github.com/SFML/SFML
