@@ -11,7 +11,7 @@ FetchContent_Declare(SFML
 FetchContent_MakeAvailable(SFML)
 
 add_executable(${PROJECT_NAME})
-target_sources(${PROJECT_NAME} PRIVATE src/main.cpp src/board.hpp)
+target_sources(${PROJECT_NAME} PRIVATE src/main.cpp src/gomoku.hpp src/board.hpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE sfml-graphics sfml-network)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
