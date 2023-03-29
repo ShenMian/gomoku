@@ -163,7 +163,16 @@ private:
 			}
 
 			if(window.hasFocus())
+			{
+				if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R))
+				{
+					board.undo();
+					chess = chess == Chess::Black ? Chess::White : Chess::Black;
+					while(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R))
+						;
+				}
 				handle_cursor_move();
+			}
 
 			if(window.hasFocus() && handle_chess_place())
 			{
@@ -177,8 +186,8 @@ private:
 
 	void create_window()
 	{
-		const sf::Vector2u window_size(board.position().x * 2 + (board.size().x - 1) * 46,
-		                               board.position().y * 2 + (board.size().y - 1) * 46);
+		const sf::Vector2u window_size(static_cast<unsigned>(board.position().x) * 2 + (static_cast<unsigned>(board.size().x) - 1) * 46,
+		                               static_cast<unsigned>(board.position().y) * 2 + (static_cast<unsigned>(board.size().y) - 1) * 46);
 
 		window.create(sf::VideoMode{window_size.x, window_size.y}, "Gomoku", sf::Style::Close);
 		window.setFramerateLimit(60);
@@ -214,7 +223,7 @@ private:
 			return;
 		}
 
-		const auto chesses = board.get_five_chesses_in_a_row(position);
+		const auto chesses = board.get_five_in_a_row(position);
 		if(!chesses.has_value())
 			return;
 

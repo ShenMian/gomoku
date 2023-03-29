@@ -36,37 +36,24 @@ public:
 	 */
 	void place_chess(sf::Vector2i position, Chess chess)
 	{
-		board[position.x][position.y] = chess;
+		board_[position.x][position.y] = chess;
 		if(chess != Chess::Black && chess != Chess::White)
 			return;
-		last_place_position_ = position;
-		steps_++;
+		histories_.push_back(position);
 	}
 
-	/**
-	 * @brief 将窗口坐标转为棋盘坐标.
-	 *
-	 * @return 返回对应的棋盘坐标, 若坐标在棋盘外则返回空.
-	 */
-	std::optional<sf::Vector2i> window_to_board_position(sf::Vector2i position) const
+	void undo()
 	{
-		position.x = static_cast<int>((position.x - position_.x) + (chess_offset_ / 2.f));
-		position.y = static_cast<int>((position.y - position_.y) + (chess_offset_ / 2.f));
-		if(position.x < 0 || position.y < 0)
-			return std::nullopt;
-
-		position.x /= static_cast<int>(chess_offset_);
-		position.y /= static_cast<int>(chess_offset_);
-		if(position.x >= size_.x || position.y >= size_.y)
-			return std::nullopt;
-
-		return position;
+		if(histories_.empty())
+			return;
+		place_chess(histories_.back(), Chess::Null);
+		histories_.pop_back();
 	}
 
 	/**
 	 * @brief 棋盘是否已被下满.
 	 */
-	bool is_full() const noexcept { return steps_ == max_steps_; }
+	bool is_full() const noexcept { return histories_.size() == max_steps_; }
 
 	/**
 	 * @brief 返回连成一线的五子.
@@ -75,11 +62,11 @@ public:
 	 *
 	 * @return 若存在则返回连成一线的五子, 否则返回空.
 	 */
-	std::optional<std::vector<sf::Vector2i>> get_five_chesses_in_a_row(sf::Vector2i position)
+	std::optional<std::vector<sf::Vector2i>> get_five_in_a_row(sf::Vector2i position)
 	{
-		const Chess chess = board[position.x][position.y];
+		const Chess chess = board_[position.x][position.y];
 
-		sf::Vector2i directions[8] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, -1}, {1, 1}, {-1, 1}, {1, -1}};
+		const sf::Vector2i directions[8] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, -1}, {1, 1}, {-1, 1}, {1, -1}};
 		for(int i = 0; i < 8; i += 2)
 		{
 			std::vector<sf::Vector2i> chesses;
@@ -91,7 +78,7 @@ public:
 					if(pos.x < 0 || pos.x >= size_.x || pos.y < 0 || pos.y >= size_.y)
 						break;
 
-					if(board[pos.x][pos.y] == chess)
+					if(board_[pos.x][pos.y] == chess)
 						chesses.emplace_back(pos.x, pos.y);
 					else
 						break;
@@ -118,20 +105,39 @@ public:
 	 *
 	 * @return 返回棋子.
 	 */
-	Chess get_chess(sf::Vector2i position) const { return board[position.x][position.y]; }
+	Chess get_chess(sf::Vector2i position) const { return board_[position.x][position.y]; }
 
 	/**
 	 * @brief 重置棋盘.
 	 */
 	void reset()
 	{
-		board.clear();
-		board.resize(size_.x);
-		for(auto& row : board)
+		board_.clear();
+		board_.resize(size_.x);
+		for(auto& row : board_)
 			row.resize(size_.y);
 
-		steps_               = 0;
-		last_place_position_ = {-1, -1};
+		histories_.clear();
+	}
+
+	/**
+	 * @brief 将窗口坐标转为棋盘坐标.
+	 *
+	 * @return 返回对应的棋盘坐标, 若坐标在棋盘外则返回空.
+	 */
+	std::optional<sf::Vector2i> window_to_board_position(sf::Vector2i position) const
+	{
+		position.x = static_cast<int>((position.x - position_.x) + (chess_offset_ / 2.f));
+		position.y = static_cast<int>((position.y - position_.y) + (chess_offset_ / 2.f));
+		if(position.x < 0 || position.y < 0)
+			return std::nullopt;
+
+		position.x /= static_cast<int>(chess_offset_);
+		position.y /= static_cast<int>(chess_offset_);
+		if(position.x >= size_.x || position.y >= size_.y)
+			return std::nullopt;
+
+		return position;
 	}
 
 	const auto& position() const noexcept { return position_; }
@@ -171,10 +177,10 @@ private:
 
 	void draw_chesses(sf::RenderWindow& window) const
 	{
-		for(int y = 0; y < board.size(); y++)
-			for(int x = 0; x < board[0].size(); x++)
-				if(board[x][y] != Chess::Null)
-					draw_chess(window, {x, y}, board[x][y]);
+		for(int y = 0; y < board_.size(); y++)
+			for(int x = 0; x < board_[0].size(); x++)
+				if(board_[x][y] != Chess::Null)
+					draw_chess(window, {x, y}, board_[x][y]);
 	}
 
 	/**
@@ -184,12 +190,14 @@ private:
 	 */
 	void draw_mark(sf::RenderWindow& window) const
 	{
-		if(last_place_position_.x < 0 || last_place_position_.y < 0)
+		if(histories_.empty())
+			return;
+		if(histories_.back().x < 0 || histories_.back().y < 0)
 			return;
 		sf::CircleShape mark(chess_diameter_ / 4.f / 2.f, 3);
 		mark.setOrigin(mark.getRadius(), mark.getRadius());
-		mark.setPosition(position_.x + last_place_position_.x * chess_offset_,
-		                 position_.y + last_place_position_.y * chess_offset_);
+		mark.setPosition(position_.x + histories_.back().x * chess_offset_,
+		                 position_.y + histories_.back().y * chess_offset_);
 		mark.setFillColor(sf::Color::Red);
 		window.draw(mark);
 	}
@@ -256,7 +264,9 @@ private:
 		window.draw(star);
 	}
 
-	std::vector<std::vector<Chess>> board;
+	std::vector<std::vector<Chess>> board_;
+
+	std::vector<sf::Vector2i> histories_;
 
 	const float chess_diameter_ = 40.f;
 	const float chess_spacing_  = 6.f;
@@ -267,6 +277,4 @@ private:
 
 	const float  line_thickness_ = 2.f;
 	const int    max_steps_;
-	int          steps_;
-	sf::Vector2i last_place_position_;
 };
