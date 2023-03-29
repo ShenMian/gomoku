@@ -1,4 +1,7 @@
-﻿#include "gomoku.hpp"
+﻿// Copyright 2023 ShenMian
+// License(Apache-2.0)
+
+#include "gomoku.hpp"
 
 int main()
 {
