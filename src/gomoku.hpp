@@ -75,11 +75,11 @@ public:
 				std::cout << "waiting for connections...\n";
 				sf::TcpListener listener;
 				listener.listen(port);
-				while(listener.accept(socket) != sf::Socket::Status::Done)
-					std::cout << "retrying...\n";
+				if(listener.accept(socket) != sf::Socket::Status::Done)
+					throw std::runtime_error("failed to accept socket");
 			}
 			else
-				return;
+				throw std::runtime_error("invalid option");
 
 			create_window();
 			socket.setBlocking(false);
@@ -94,7 +94,7 @@ public:
 			offline();
 		}
 		else
-			return;
+			throw std::runtime_error("invalid option");
 	}
 
 private:
@@ -120,8 +120,12 @@ private:
 
 					sf::Packet packet;
 					packet << cursor_position;
-					if(socket.send(packet) != sf::Socket::Done)
-						throw std::runtime_error("the network connection has been lost");
+					if(const auto status = socket.send(packet); status != sf::Socket::Done)
+					{
+						if(status == sf::Socket::Disconnected)
+							throw std::runtime_error("the network connection has been lost");
+						throw std::runtime_error("unknown network error");
+					}
 
 					player_status = Status::Wait;
 					handle_over(cursor_position);
@@ -146,6 +150,8 @@ private:
 				}
 				else if(status == sf::Socket::Disconnected)
 					throw std::runtime_error("the network connection has been lost");
+				else
+					throw std::runtime_error("unknown network error");
 			}
 
 			render();
@@ -164,11 +170,12 @@ private:
 
 			if(window.hasFocus())
 			{
-				if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R))
+				const auto undo_key = sf::Keyboard::Key::BackSpace;
+				if(sf::Keyboard::isKeyPressed(undo_key))
 				{
 					board.undo();
 					chess = chess == Chess::Black ? Chess::White : Chess::Black;
-					while(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R))
+					while(sf::Keyboard::isKeyPressed(undo_key))
 						;
 				}
 				handle_cursor_move();
