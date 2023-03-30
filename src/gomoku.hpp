@@ -92,7 +92,7 @@ public:
 		else if(choice == "2")
 		{
 			create_window();
-			chess = Chess::Black;
+			chess_ = Chess::Black;
 
 			offline();
 		}
@@ -103,44 +103,42 @@ public:
 private:
 	void online(sf::TcpSocket& socket)
 	{
-		while(window.isOpen())
+		while(window_.isOpen())
 		{
-			for(auto event = sf::Event{}; window.pollEvent(event);)
-				if(event.type == sf::Event::Closed)
-					window.close();
+			handle_window_event();
 
-			if(window.hasFocus())
+			if(window_.hasFocus())
 				handle_cursor_move();
 
-			if(player_status == Status::Ready || player_status == Status::Initial)
+			if(status_ == Status::Ready || status_ == Status::Initial)
 			{
-				if(window.hasFocus() && handle_chess_place())
+				if(window_.hasFocus() && handle_chess_place())
 				{
-					if(player_status == Status::Initial)
-						chess = Chess::Black;
+					if(status_ == Status::Initial)
+						chess_ = Chess::Black;
 
 					sf::Packet packet;
-					packet << cursor_position;
+					packet << cursor_position_;
 					send(socket, packet);
-					player_status = Status::Wait;
-					handle_over(cursor_position);
+					status_ = Status::Wait;
+					handle_over(cursor_position_);
 				}
 			}
 
-			if(player_status == Status::Wait || player_status == Status::Initial)
+			if(status_ == Status::Wait || status_ == Status::Initial)
 			{
 				sf::Packet packet;
 				if(receive(socket, packet))
 				{
-					if(player_status == Status::Initial)
-						chess = Chess::White;
+					if(status_ == Status::Initial)
+						chess_ = Chess::White;
 
 					sf::Vector2i position;
 					packet >> position;
 
-					board.place_chess(position, chess == Chess::Black ? Chess::White : Chess::Black);
+					board_.place_chess(position, chess_ == Chess::Black ? Chess::White : Chess::Black);
 
-					player_status = Status::Ready;
+					status_ = Status::Ready;
 					handle_over(position);
 				}
 			}
@@ -151,19 +149,17 @@ private:
 
 	void offline()
 	{
-		while(window.isOpen())
+		while(window_.isOpen())
 		{
-			for(auto event = sf::Event{}; window.pollEvent(event);)
-				if(event.type == sf::Event::Closed)
-					window.close();
+			handle_window_event();
 
-			if(window.hasFocus())
+			if(window_.hasFocus())
 			{
 				const auto undo_key = sf::Keyboard::Key::BackSpace;
 				if(sf::Keyboard::isKeyPressed(undo_key))
 				{
-					board.undo();
-					chess = chess == Chess::Black ? Chess::White : Chess::Black;
+					board_.undo();
+					chess_ = chess_ == Chess::Black ? Chess::White : Chess::Black;
 					while(sf::Keyboard::isKeyPressed(undo_key))
 						;
 				}
@@ -171,8 +167,8 @@ private:
 
 				if(handle_chess_place())
 				{
-					handle_over(cursor_position);
-					chess = chess == Chess::Black ? Chess::White : Chess::Black;
+					handle_over(cursor_position_);
+					chess_ = chess_ == Chess::Black ? Chess::White : Chess::Black;
 				}
 			}
 
@@ -182,19 +178,19 @@ private:
 
 	void create_window()
 	{
-		const sf::Vector2u window_size(static_cast<unsigned>(board.position().x) * 2 + (static_cast<unsigned>(board.size().x) - 1) * 46,
-		                               static_cast<unsigned>(board.position().y) * 2 + (static_cast<unsigned>(board.size().y) - 1) * 46);
+		const sf::Vector2u window_size(static_cast<unsigned>(board_.position().x) * 2 + (static_cast<unsigned>(board_.size().x) - 1) * 46,
+		                               static_cast<unsigned>(board_.position().y) * 2 + (static_cast<unsigned>(board_.size().y) - 1) * 46);
 
-		window.create(sf::VideoMode{window_size.x, window_size.y}, "Gomoku", sf::Style::Close);
-		window.setFramerateLimit(60);
+		window_.create(sf::VideoMode{window_size.x, window_size.y}, "Gomoku", sf::Style::Close);
+		window_.setFramerateLimit(60);
 	}
 
 	void reset()
 	{
-		player_status   = Status::Initial;
-		chess           = Chess::Null;
-		cursor_position = board.size() / 2;
-		board.reset();
+		status_         = Status::Initial;
+		chess_           = Chess::Null;
+		cursor_position_ = board_.size() / 2;
+		board_.reset();
 	}
 
 	void draw_cursor()
@@ -202,38 +198,45 @@ private:
 		sf::CircleShape cursor(40 / 2.f, 50);
 		cursor.setOrigin(cursor.getRadius(), cursor.getRadius());
 		cursor.setFillColor(sf::Color(255 / 2, 255 / 2, 255 / 2, 150));
-		cursor.setPosition(board.position().x + cursor_position.x * 46, board.position().y + cursor_position.y * 46);
-		window.draw(cursor);
+		cursor.setPosition(board_.position().x + cursor_position_.x * 46, board_.position().y + cursor_position_.y * 46);
+		window_.draw(cursor);
+	}
+
+	void handle_window_event()
+	{
+		for(auto event = sf::Event{}; window_.pollEvent(event);)
+			if(event.type == sf::Event::Closed)
+				window_.close();
 	}
 
 	void handle_over(sf::Vector2i position)
 	{
-		if(board.is_full())
+		if(board_.is_full())
 		{
-			window.clear(sf::Color(242, 208, 75));
-			board.draw(window);
-			window.display();
+			window_.clear(sf::Color(242, 208, 75));
+			board_.draw(window_);
+			window_.display();
 			sf::sleep(sf::seconds(5.f));
 
 			reset();
 			return;
 		}
 
-		const auto chesses = board.get_five_in_a_row(position);
+		const auto chesses = board_.get_five_in_a_row(position);
 		if(!chesses.has_value())
 			return;
 
-		const auto winner_chess = board.get_chess(position);
+		const auto winner_chess = board_.get_chess(position);
 
 		for(int i = 0; i < 10; i++)
 		{
 			for(const auto& pos : chesses.value())
-				board.place_chess(pos, i % 2 == 0 ? Chess::Green : winner_chess);
-			board.place_chess(position, i % 2 == 0 ? Chess::Green : winner_chess);
+				board_.place_chess(pos, i % 2 == 0 ? Chess::Green : winner_chess);
+			board_.place_chess(position, i % 2 == 0 ? Chess::Green : winner_chess);
 
-			window.clear(sf::Color(242, 208, 75));
-			board.draw(window);
-			window.display();
+			window_.clear(sf::Color(242, 208, 75));
+			board_.draw(window_);
+			window_.display();
 			sf::sleep(sf::seconds(0.5f));
 		}
 
@@ -242,8 +245,8 @@ private:
 
 	void handle_mouse_input()
 	{
-		if(const auto result = board.window_to_board_position(sf::Mouse::getPosition(window)); result.has_value())
-			cursor_position = result.value();
+		if(const auto result = board_.window_to_board_position(sf::Mouse::getPosition(window_)); result.has_value())
+			cursor_position_ = result.value();
 	}
 
 	void handle_keyboard_input()
@@ -254,27 +257,27 @@ private:
 
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
 		{
-			cursor_position.y--;
+			cursor_position_.y--;
 			clock.restart();
 		}
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
 		{
-			cursor_position.y++;
+			cursor_position_.y++;
 			clock.restart();
 		}
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
 		{
-			cursor_position.x--;
+			cursor_position_.x--;
 			clock.restart();
 		}
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
 		{
-			cursor_position.x++;
+			cursor_position_.x++;
 			clock.restart();
 		}
 
-		cursor_position.x = std::clamp(cursor_position.x, 0, board.size().x - 1);
-		cursor_position.y = std::clamp(cursor_position.y, 0, board.size().y - 1);
+		cursor_position_.x = std::clamp(cursor_position_.x, 0, board_.size().x - 1);
+		cursor_position_.y = std::clamp(cursor_position_.y, 0, board_.size().y - 1);
 	}
 
 	void handle_cursor_move()
@@ -289,19 +292,19 @@ private:
 		if(clock.getElapsedTime() < sf::seconds(0.2f))
 			return false;
 
-		if((board.window_to_board_position(sf::Mouse::getPosition(window)).has_value() &&
+		if((board_.window_to_board_position(sf::Mouse::getPosition(window_)).has_value() &&
 		    sf::Mouse::isButtonPressed(sf::Mouse::Left)) ||
 		   sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
 		{
 			clock.restart();
 
-			if(board.get_chess(cursor_position) != Chess::Null)
+			if(board_.get_chess(cursor_position_) != Chess::Null)
 				return false;
 
-			if(chess == Chess::Null)
-				chess = Chess::Black;
+			if(chess_ == Chess::Null)
+				chess_ = Chess::Black;
 
-			board.place_chess(cursor_position, chess);
+			board_.place_chess(cursor_position_, chess_);
 
 			return true;
 		}
@@ -310,10 +313,10 @@ private:
 
 	void render()
 	{
-		window.clear(sf::Color(242, 208, 75));
-		board.draw(window);
+		window_.clear(sf::Color(242, 208, 75));
+		board_.draw(window_);
 		draw_cursor();
-		window.display();
+		window_.display();
 	}
 
 	static void send(sf::TcpSocket& socket, sf::Packet& packet)
@@ -340,7 +343,7 @@ private:
 		} while(status == sf::Socket::Status::Partial);
 		if(status == sf::Socket::Status::NotReady)
 			return false;
-		else if(status == sf::Socket::Status::Done)
+		if(status == sf::Socket::Status::Done)
 			return true;
 
 		if(status == sf::Socket::Disconnected)
@@ -348,9 +351,9 @@ private:
 		throw std::runtime_error("unknown network error");
 	}
 
-	Status           player_status;
-	Chess            chess;
-	sf::Vector2i     cursor_position;
-	Board            board;
-	sf::RenderWindow window;
+	Status           status_;
+	Chess            chess_;
+	sf::Vector2i     cursor_position_;
+	Board            board_;
+	sf::RenderWindow window_;
 };

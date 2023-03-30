@@ -17,7 +17,7 @@ enum class Chess
 class Board
 {
 public:
-	Board(sf::Vector2i size = {15, 15}) : size_(size), max_steps_(size.x * size.y) { reset(); }
+	Board(sf::Vector2i size = {15, 15}) : size_(size) { reset(); }
 
 	/**
 	 * @brief 将棋盘绘制在指定的窗口中.
@@ -56,7 +56,7 @@ public:
 	/**
 	 * @brief 棋盘是否已被下满.
 	 */
-	bool is_full() const noexcept { return histories_.size() == max_steps_; }
+	bool is_full() const noexcept { return histories_.size() == size_.x * size_.y; }
 
 	/**
 	 * @brief 返回连成一线的五子.
@@ -152,26 +152,28 @@ private:
 	 */
 	void draw_board(sf::RenderWindow& window) const
 	{
+		const float line_thickness = 2.f;
+
 		sf::RectangleShape board_shape({(size_.x - 1) * chess_offset_, (size_.y - 1) * chess_offset_});
 		board_shape.setFillColor(sf::Color(242, 208, 75));
 		board_shape.setPosition(position_);
 		window.draw(board_shape);
 
-		sf::RectangleShape horizontal_line(sf::Vector2f((size_.x - 1) * chess_offset_, line_thickness_));
+		sf::RectangleShape horizontal_line(sf::Vector2f((size_.x - 1) * chess_offset_, line_thickness));
 		horizontal_line.setOrigin(0, horizontal_line.getSize().y / 2);
 		horizontal_line.setFillColor(sf::Color::Black);
 		for(int y = 0; y < size_.y; y++)
 		{
-			horizontal_line.setPosition(position_.x, y * chess_offset_ + position_.y);
+			horizontal_line.setPosition(board_to_window_position(sf::Vector2f(0, y)));
 			window.draw(horizontal_line);
 		}
 
-		sf::RectangleShape vertical_line(sf::Vector2f(line_thickness_, (size_.y - 1) * chess_offset_));
+		sf::RectangleShape vertical_line(sf::Vector2f(line_thickness, (size_.y - 1) * chess_offset_));
 		vertical_line.setOrigin(vertical_line.getSize().x / 2, 0);
 		vertical_line.setFillColor(sf::Color::Black);
 		for(int x = 0; x < size_.x; x++)
 		{
-			vertical_line.setPosition(x * chess_offset_ + position_.x, position_.y);
+			vertical_line.setPosition(board_to_window_position(sf::Vector2f(x, 0)));
 			window.draw(vertical_line);
 		}
 
@@ -199,8 +201,7 @@ private:
 			return;
 		sf::CircleShape mark(chess_diameter_ / 4.f / 2.f, 3);
 		mark.setOrigin(mark.getRadius(), mark.getRadius());
-		mark.setPosition(position_.x + histories_.back().x * chess_offset_,
-		                 position_.y + histories_.back().y * chess_offset_);
+		mark.setPosition(board_to_window_position(sf::Vector2f(histories_.back())));
 		mark.setFillColor(sf::Color::Red);
 		window.draw(mark);
 	}
@@ -216,7 +217,7 @@ private:
 	{
 		sf::CircleShape chess_shape(chess_diameter_ / 2.f, 50);
 		chess_shape.setOrigin(chess_shape.getRadius(), chess_shape.getRadius());
-		chess_shape.setPosition(position_.x + position.x * chess_offset_, position_.y + position.y * chess_offset_);
+		chess_shape.setPosition(board_to_window_position(sf::Vector2f(position.x, position.y)));
 
 		switch(chess)
 		{
@@ -249,27 +250,30 @@ private:
 		star.setFillColor(sf::Color::Black);
 
 		// 绘制星
-		star.setPosition(3 * chess_offset_ + position_.x, 3 * chess_offset_ + position_.y);
+		star.setPosition(board_to_window_position({3.f, 3.f}));
 		window.draw(star);
 
-		star.setPosition((size_.x - 4) * chess_offset_ + position_.x, 3 * chess_offset_ + position_.y);
+		star.setPosition(board_to_window_position({size_.x - 4.f, 3.f}));
 		window.draw(star);
 
-		star.setPosition(3 * chess_offset_ + position_.x, (size_.y - 4) * chess_offset_ + position_.y);
+		star.setPosition(board_to_window_position({3.f, size_.y - 4.f}));
 		window.draw(star);
 
-		star.setPosition((size_.x - 4) * chess_offset_ + position_.x, (size_.y - 4) * chess_offset_ + position_.y);
+		star.setPosition(board_to_window_position({size_.x - 4.f, size_.y - 4.f}));
 		window.draw(star);
 
 		// 绘制天元
-		star.setPosition((size_.x - 1) / 2.f * chess_offset_ + position_.x,
-		                 (size_.y - 1) / 2.f * chess_offset_ + position_.y);
+		star.setPosition(board_to_window_position({(size_.x - 1.f) / 2.f, (size_.y - 1.f) / 2.f}));
 		window.draw(star);
 	}
 
-	std::vector<std::vector<Chess>> board_;
+	sf::Vector2f board_to_window_position(sf::Vector2f position) const noexcept
+	{
+		return {position_.x + position.x * chess_offset_, position_.y + position.y * chess_offset_};
+	}
 
-	std::vector<sf::Vector2i> histories_;
+	std::vector<std::vector<Chess>> board_;
+	std::vector<sf::Vector2i>       histories_;
 
 	const float chess_diameter_ = 40.f;
 	const float chess_spacing_  = 6.f;
@@ -277,7 +281,4 @@ private:
 
 	const sf::Vector2i size_;
 	const sf::Vector2f position_ = {chess_offset_ + 10.f, chess_offset_ + 10.f};
-
-	const float  line_thickness_ = 2.f;
-	const int    max_steps_;
 };
