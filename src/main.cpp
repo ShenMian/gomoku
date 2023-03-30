@@ -5,10 +5,9 @@
 
 int main()
 {
-	Gomoku gomoku;
-
 	try
 	{
+		Gomoku gomoku;
 		gomoku.run();
 	}
 	catch(std::runtime_error& e)

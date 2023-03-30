@@ -106,10 +106,8 @@ private:
 		while(window.isOpen())
 		{
 			for(auto event = sf::Event{}; window.pollEvent(event);)
-			{
 				if(event.type == sf::Event::Closed)
 					window.close();
-			}
 
 			if(window.hasFocus())
 				handle_cursor_move();
@@ -123,13 +121,7 @@ private:
 
 					sf::Packet packet;
 					packet << cursor_position;
-					if(const auto status = socket.send(packet); status != sf::Socket::Done)
-					{
-						if(status == sf::Socket::Disconnected)
-							throw std::runtime_error("the network connection has been lost");
-						throw std::runtime_error("unknown network error");
-					}
-
+					send(socket, packet);
 					player_status = Status::Wait;
 					handle_over(cursor_position);
 				}
@@ -138,7 +130,7 @@ private:
 			if(player_status == Status::Wait || player_status == Status::Initial)
 			{
 				sf::Packet packet;
-				if(const auto status = socket.receive(packet); status == sf::Socket::Done)
+				if(receive(socket, packet))
 				{
 					if(player_status == Status::Initial)
 						chess = Chess::White;
@@ -151,10 +143,6 @@ private:
 					player_status = Status::Ready;
 					handle_over(position);
 				}
-				else if(status == sf::Socket::Disconnected)
-					throw std::runtime_error("the network connection has been lost");
-				else
-					throw std::runtime_error("unknown network error");
 			}
 
 			render();
@@ -166,10 +154,8 @@ private:
 		while(window.isOpen())
 		{
 			for(auto event = sf::Event{}; window.pollEvent(event);)
-			{
 				if(event.type == sf::Event::Closed)
 					window.close();
-			}
 
 			if(window.hasFocus())
 			{
@@ -182,12 +168,12 @@ private:
 						;
 				}
 				handle_cursor_move();
-			}
 
-			if(window.hasFocus() && handle_chess_place())
-			{
-				handle_over(cursor_position);
-				chess = chess == Chess::Black ? Chess::White : Chess::Black;
+				if(handle_chess_place())
+				{
+					handle_over(cursor_position);
+					chess = chess == Chess::Black ? Chess::White : Chess::Black;
+				}
 			}
 
 			render();
@@ -328,6 +314,38 @@ private:
 		board.draw(window);
 		draw_cursor();
 		window.display();
+	}
+
+	static void send(sf::TcpSocket& socket, sf::Packet& packet)
+	{
+		sf::Socket::Status status;
+		do
+		{
+			status = socket.send(packet);
+		} while(status == sf::Socket::Status::Partial);
+		if(status == sf::Socket::Status::Done)
+			return;
+
+		if(status == sf::Socket::Disconnected)
+			throw std::runtime_error("the network connection has been lost");
+		throw std::runtime_error("unknown network error");
+	}
+
+	static bool receive(sf::TcpSocket& socket, sf::Packet& packet)
+	{
+		sf::Socket::Status status;
+		do
+		{
+			status = socket.receive(packet);
+		} while(status == sf::Socket::Status::Partial);
+		if(status == sf::Socket::Status::NotReady)
+			return false;
+		else if(status == sf::Socket::Status::Done)
+			return true;
+
+		if(status == sf::Socket::Disconnected)
+			throw std::runtime_error("the network connection has been lost");
+		throw std::runtime_error("unknown network error");
 	}
 
 	Status           player_status;
