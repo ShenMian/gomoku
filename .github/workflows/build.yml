@@ -19,7 +19,9 @@ jobs:
 
       - name: Setup enviroment (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
-        run: sudo apt install libudev-dev libx11-dev libxrandr-dev libgl1-mesa-dev libalut-dev libvorbis-dev libsndfile1-dev libsfml-dev
+        run: |
+          sudo apt update
+          sudo apt install libudev-dev libx11-dev libxrandr-dev libgl1-mesa-dev libalut-dev libvorbis-dev libsndfile1-dev libsfml-dev
 
       - name: Setup clang (Windows)
         if: matrix.os == 'windows-latest'
