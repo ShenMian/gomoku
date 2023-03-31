@@ -136,7 +136,7 @@ private:
 					sf::Vector2i position;
 					packet >> position;
 
-					board_.place_chess(position, chess_ == Chess::Black ? Chess::White : Chess::Black);
+					board_.place(position, chess_ == Chess::Black ? Chess::White : Chess::Black);
 
 					status_ = Status::Ready;
 					handle_over(position);
@@ -187,7 +187,7 @@ private:
 
 	void reset()
 	{
-		status_         = Status::Initial;
+		status_          = Status::Initial;
 		chess_           = Chess::Null;
 		cursor_position_ = board_.size() / 2;
 		board_.reset();
@@ -198,7 +198,7 @@ private:
 		sf::CircleShape cursor(40 / 2.f, 50);
 		cursor.setOrigin(cursor.getRadius(), cursor.getRadius());
 		cursor.setFillColor(sf::Color(255 / 2, 255 / 2, 255 / 2, 150));
-		cursor.setPosition(board_.position().x + cursor_position_.x * 46, board_.position().y + cursor_position_.y * 46);
+		cursor.setPosition(board_.board_to_window_position(sf::Vector2f(cursor_position_)));
 		window_.draw(cursor);
 	}
 
@@ -209,7 +209,7 @@ private:
 				window_.close();
 	}
 
-	void handle_over(sf::Vector2i position)
+	void handle_over(const sf::Vector2i& position)
 	{
 		if(board_.is_full())
 		{
@@ -231,8 +231,8 @@ private:
 		for(int i = 0; i < 10; i++)
 		{
 			for(const auto& pos : chesses.value())
-				board_.place_chess(pos, i % 2 == 0 ? Chess::Green : winner_chess);
-			board_.place_chess(position, i % 2 == 0 ? Chess::Green : winner_chess);
+				board_.place(pos, i % 2 == 0 ? Chess::Green : winner_chess);
+			board_.place(position, i % 2 == 0 ? Chess::Green : winner_chess);
 
 			window_.clear(sf::Color(242, 208, 75));
 			board_.draw(window_);
@@ -304,7 +304,7 @@ private:
 			if(chess_ == Chess::Null)
 				chess_ = Chess::Black;
 
-			board_.place_chess(cursor_position_, chess_);
+			board_.place(cursor_position_, chess_);
 
 			return true;
 		}
