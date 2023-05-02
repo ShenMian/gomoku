@@ -33,6 +33,9 @@ public:
 		histories_.push_back(position);
 	}
 
+	/**
+	 * @brief 悔棋.
+	 */
 	void undo()
 	{
 		if(histories_.empty())

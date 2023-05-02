@@ -28,6 +28,16 @@ enum class Status
 	Initial
 };
 
+enum Action : uint8_t
+{
+	CursorMoveUp    = 1 << 0,
+	CursorMoveDown  = 1 << 1,
+	CursorMoveLeft  = 1 << 2,
+	CursorMoveRight = 1 << 3,
+	PlaceChess      = 1 << 4,
+	Undo            = 1 << 5,
+};
+
 class Gomoku
 {
 public:
@@ -155,14 +165,7 @@ private:
 
 			if(window_.hasFocus())
 			{
-				const auto undo_key = sf::Keyboard::Key::BackSpace;
-				if(sf::Keyboard::isKeyPressed(undo_key))
-				{
-					board_.undo();
-					chess_ = chess_ == Chess::Black ? Chess::White : Chess::Black;
-					while(sf::Keyboard::isKeyPressed(undo_key))
-						;
-				}
+				handle_undo();
 				handle_cursor_move();
 
 				if(handle_chess_place())
@@ -243,34 +246,91 @@ private:
 		reset();
 	}
 
-	void handle_mouse_input()
+	uint8_t get_actions() const
 	{
-		if(const auto result = board_.window_to_board_position(sf::Mouse::getPosition(window_)); result.has_value())
-			cursor_position_ = result.value();
+		uint8_t actions = 0;
+
+		// handle mouse input
+		if(board_.window_to_board_position(sf::Mouse::getPosition(window_)).has_value() &&
+		   sf::Mouse::isButtonPressed(sf::Mouse::Left))
+			actions |= Action::PlaceChess;
+
+		// handle keyboard input
+		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
+			actions |= Action::CursorMoveUp;
+		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
+			actions |= Action::CursorMoveDown;
+		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+			actions |= Action::CursorMoveLeft;
+		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+			actions |= Action::CursorMoveRight;
+		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
+			actions |= Action::PlaceChess;
+		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::BackSpace))
+			actions |= Action::Undo;
+
+		// handle controller input
+		unsigned int controller_id;
+		for (int id = 0; id < 8; id++)
+		{
+			if(sf::Joystick::isConnected(id))
+			{
+				controller_id = id;
+				break;
+			}
+		}
+
+		constexpr unsigned int buttonA   = 0;
+		constexpr unsigned int buttonB   = 1;
+		constexpr auto         axisDpadX = sf::Joystick::PovX;
+		constexpr auto         axisDpadY = sf::Joystick::PovY;
+		if(sf::Joystick::isConnected(controller_id))
+		{
+			if(sf::Joystick::getAxisPosition(controller_id, axisDpadY) == 100)
+				actions |= Action::CursorMoveUp;
+			if(sf::Joystick::getAxisPosition(controller_id, axisDpadY) == -100)
+				actions |= Action::CursorMoveDown;
+			if(sf::Joystick::getAxisPosition(controller_id, axisDpadX) == -100)
+				actions |= Action::CursorMoveLeft;
+			if(sf::Joystick::getAxisPosition(controller_id, axisDpadX) == 100)
+				actions |= Action::CursorMoveRight;
+			if(sf::Joystick::isButtonPressed(controller_id, buttonA))
+				actions |= Action::PlaceChess;
+			if(sf::Joystick::isButtonPressed(controller_id, buttonB))
+				actions |= Action::Undo;
+		}
+
+		return actions;
 	}
 
-	void handle_keyboard_input()
+	void handle_cursor_move()
 	{
+		// handle mouse movement
+		if(const auto result = board_.window_to_board_position(sf::Mouse::getPosition(window_)); result.has_value())
+			cursor_position_ = result.value();
+
 		static sf::Clock clock;
 		if(clock.getElapsedTime() < sf::seconds(0.2f))
 			return;
 
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
+		const auto actions = get_actions();
+
+		if(actions & Action::CursorMoveUp)
 		{
 			cursor_position_.y--;
 			clock.restart();
 		}
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
+		if(actions & Action::CursorMoveDown)
 		{
 			cursor_position_.y++;
 			clock.restart();
 		}
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+		if(actions & Action::CursorMoveLeft)
 		{
 			cursor_position_.x--;
 			clock.restart();
 		}
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+		if(actions & Action::CursorMoveRight)
 		{
 			cursor_position_.x++;
 			clock.restart();
@@ -280,21 +340,15 @@ private:
 		cursor_position_.y = std::clamp(cursor_position_.y, 0, board_.size().y - 1);
 	}
 
-	void handle_cursor_move()
-	{
-		handle_mouse_input();
-		handle_keyboard_input();
-	}
-
 	bool handle_chess_place()
 	{
 		static sf::Clock clock;
 		if(clock.getElapsedTime() < sf::seconds(0.2f))
 			return false;
 
-		if((board_.window_to_board_position(sf::Mouse::getPosition(window_)).has_value() &&
-		    sf::Mouse::isButtonPressed(sf::Mouse::Left)) ||
-		   sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+		const auto actions = get_actions();
+
+		if(actions & Action::PlaceChess)
 		{
 			clock.restart();
 
@@ -309,6 +363,21 @@ private:
 			return true;
 		}
 		return false;
+	}
+
+	void handle_undo()
+	{
+		auto actions = get_actions();
+		if(actions & Action::Undo)
+		{
+			board_.undo();
+			chess_ = chess_ == Chess::Black ? Chess::White : Chess::Black;
+			do
+			{
+				sf::Joystick::update();
+				actions = get_actions();
+			} while(actions & Action::Undo);
+		}
 	}
 
 	void render()
