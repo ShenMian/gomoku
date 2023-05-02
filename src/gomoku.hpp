@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <unordered_map>
 
 inline sf::Packet& operator<<(sf::Packet& packet, const sf::Vector2i& position)
 {
@@ -30,12 +31,31 @@ enum class Status
 
 enum Action : uint8_t
 {
+	None            = 0,
 	CursorMoveUp    = 1 << 0,
 	CursorMoveDown  = 1 << 1,
 	CursorMoveLeft  = 1 << 2,
 	CursorMoveRight = 1 << 3,
 	PlaceChess      = 1 << 4,
 	Undo            = 1 << 5,
+};
+
+const std::unordered_map<sf::Keyboard::Key, Action> keyboard_actions = {
+    {sf::Keyboard::Key::W, Action::CursorMoveUp},      {sf::Keyboard::Key::S, Action::CursorMoveDown},
+    {sf::Keyboard::Key::A, Action::CursorMoveLeft},    {sf::Keyboard::Key::D, Action::CursorMoveRight},
+    {sf::Keyboard::Key::Up, Action::CursorMoveUp},     {sf::Keyboard::Key::Down, Action::CursorMoveDown},
+    {sf::Keyboard::Key::Left, Action::CursorMoveLeft}, {sf::Keyboard::Key::Right, Action::CursorMoveRight},
+    {sf::Keyboard::Key::Space, Action::PlaceChess},    {sf::Keyboard::Key::BackSpace, Action::Undo},
+};
+
+const std::unordered_map<unsigned int, Action> xbox_controller_actions = {
+    {0 /* A */, Action::PlaceChess},
+    {1 /* B */, Action::Undo},
+};
+
+const std::unordered_map<unsigned int, Action> ps_controller_actions = {
+    {1 /* Cross */, Action::PlaceChess},
+    {2 /* Circle */, Action::Undo},
 };
 
 class Gomoku
@@ -181,8 +201,9 @@ private:
 
 	void create_window()
 	{
-		const sf::Vector2u window_size(static_cast<unsigned>(board_.position().x) * 2 + (static_cast<unsigned>(board_.size().x) - 1) * 46,
-		                               static_cast<unsigned>(board_.position().y) * 2 + (static_cast<unsigned>(board_.size().y) - 1) * 46);
+		const sf::Vector2u window_size(
+		    static_cast<unsigned>(board_.position().x) * 2 + (static_cast<unsigned>(board_.size().x) - 1) * 46,
+		    static_cast<unsigned>(board_.position().y) * 2 + (static_cast<unsigned>(board_.size().y) - 1) * 46);
 
 		window_.create(sf::VideoMode{window_size.x, window_size.y}, "Gomoku", sf::Style::Close);
 		window_.setFramerateLimit(60);
@@ -256,49 +277,40 @@ private:
 			actions |= Action::PlaceChess;
 
 		// handle keyboard input
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
-			actions |= Action::CursorMoveUp;
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
-			actions |= Action::CursorMoveDown;
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
-			actions |= Action::CursorMoveLeft;
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
-			actions |= Action::CursorMoveRight;
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-			actions |= Action::CursorMoveUp;
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
-			actions |= Action::CursorMoveDown;
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
-			actions |= Action::CursorMoveLeft;
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
-			actions |= Action::CursorMoveRight;
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
-			actions |= Action::PlaceChess;
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::BackSpace))
-			actions |= Action::Undo;
+		for(const auto& [key, action] : keyboard_actions)
+		{
+			if(sf::Keyboard::isKeyPressed(key))
+				actions |= action;
+		}
 
 		// handle controller input
-		constexpr unsigned int buttonA   = 0;
-		constexpr unsigned int buttonB   = 1;
-		constexpr auto         axisDpadX = sf::Joystick::PovX;
-		constexpr auto         axisDpadY = sf::Joystick::PovY;
 		for(int id = 0; id < 8; id++)
 		{
 			if(!sf::Joystick::isConnected(id))
 				break;
 
-			if(sf::Joystick::getAxisPosition(id, axisDpadY) == 100)
+			const std::unordered_map<unsigned int, Action>* controller_actions;
+			if(sf::Joystick::getIdentification(id).vendorId == 0x045E /* XBOX */)
+				controller_actions = &xbox_controller_actions;
+			if(sf::Joystick::getIdentification(id).vendorId == 0x054C /* PS */)
+				controller_actions = &ps_controller_actions;
+			else
+				controller_actions = &xbox_controller_actions;
+
+			if(sf::Joystick::getAxisPosition(id, sf::Joystick::PovY) == 100.f)
 				actions |= Action::CursorMoveUp;
-			if(sf::Joystick::getAxisPosition(id, axisDpadY) == -100)
+			if(sf::Joystick::getAxisPosition(id, sf::Joystick::PovY) == -100.f)
 				actions |= Action::CursorMoveDown;
-			if(sf::Joystick::getAxisPosition(id, axisDpadX) == -100)
+			if(sf::Joystick::getAxisPosition(id, sf::Joystick::PovX) == -100.f)
 				actions |= Action::CursorMoveLeft;
-			if(sf::Joystick::getAxisPosition(id, axisDpadX) == 100)
+			if(sf::Joystick::getAxisPosition(id, sf::Joystick::PovX) == 100.f)
 				actions |= Action::CursorMoveRight;
-			if(sf::Joystick::isButtonPressed(id, buttonA))
-				actions |= Action::PlaceChess;
-			if(sf::Joystick::isButtonPressed(id, buttonB))
-				actions |= Action::Undo;
+
+			for(const auto& [key, action] : *controller_actions)
+			{
+				if(sf::Joystick::isButtonPressed(id, key))
+					actions |= action;
+			}
 		}
 
 		return actions;
