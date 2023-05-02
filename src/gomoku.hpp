@@ -264,6 +264,14 @@ private:
 			actions |= Action::CursorMoveLeft;
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
 			actions |= Action::CursorMoveRight;
+		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
+			actions |= Action::CursorMoveUp;
+		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
+			actions |= Action::CursorMoveDown;
+		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
+			actions |= Action::CursorMoveLeft;
+		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
+			actions |= Action::CursorMoveRight;
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
 			actions |= Action::PlaceChess;
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::BackSpace))
