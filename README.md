@@ -27,10 +27,10 @@ The rules are **free-style** and there are no forbidden moves. Players can decid
 
 ### Controller
 
-| Key   | Action          |
-| ----- | --------------- |
-| `A`   | Place chess     |
-| `B`   | Undo            |
-| D-pad | Move the cursor |
+| Key          | Action          |
+| ------------ | --------------- |
+| `A`/`Cross`  | Place chess     |
+| `B`/`Circle` | Undo            |
+| D-pad        | Move the cursor |
 
 [SFML]: https://github.com/SFML/SFML
