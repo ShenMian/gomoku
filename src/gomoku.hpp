@@ -278,33 +278,26 @@ private:
 			actions |= Action::Undo;
 
 		// handle controller input
-		unsigned int controller_id;
-		for (int id = 0; id < 8; id++)
-		{
-			if(sf::Joystick::isConnected(id))
-			{
-				controller_id = id;
-				break;
-			}
-		}
-
 		constexpr unsigned int buttonA   = 0;
 		constexpr unsigned int buttonB   = 1;
 		constexpr auto         axisDpadX = sf::Joystick::PovX;
 		constexpr auto         axisDpadY = sf::Joystick::PovY;
-		if(sf::Joystick::isConnected(controller_id))
+		for(int id = 0; id < 8; id++)
 		{
-			if(sf::Joystick::getAxisPosition(controller_id, axisDpadY) == 100)
+			if(!sf::Joystick::isConnected(id))
+				break;
+
+			if(sf::Joystick::getAxisPosition(id, axisDpadY) == 100)
 				actions |= Action::CursorMoveUp;
-			if(sf::Joystick::getAxisPosition(controller_id, axisDpadY) == -100)
+			if(sf::Joystick::getAxisPosition(id, axisDpadY) == -100)
 				actions |= Action::CursorMoveDown;
-			if(sf::Joystick::getAxisPosition(controller_id, axisDpadX) == -100)
+			if(sf::Joystick::getAxisPosition(id, axisDpadX) == -100)
 				actions |= Action::CursorMoveLeft;
-			if(sf::Joystick::getAxisPosition(controller_id, axisDpadX) == 100)
+			if(sf::Joystick::getAxisPosition(id, axisDpadX) == 100)
 				actions |= Action::CursorMoveRight;
-			if(sf::Joystick::isButtonPressed(controller_id, buttonA))
+			if(sf::Joystick::isButtonPressed(id, buttonA))
 				actions |= Action::PlaceChess;
-			if(sf::Joystick::isButtonPressed(controller_id, buttonB))
+			if(sf::Joystick::isButtonPressed(id, buttonB))
 				actions |= Action::Undo;
 		}
 
