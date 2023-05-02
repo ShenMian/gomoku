@@ -73,8 +73,8 @@ public:
           Free-style
 )";
 		std::cout << R"(
-          1. online
-          2. offline
+          1. Online
+          2. Offline
 
 )";
 
@@ -86,8 +86,8 @@ public:
 			const uint16_t port = 1234;
 
 			std::cout << R"(
-          1. client
-          2. server
+          1. Client
+          2. Server
 
 )";
 			std::getline(std::cin, choice);
@@ -96,16 +96,16 @@ public:
 
 			if(choice == "1")
 			{
-				std::cout << "host ip: ";
+				std::cout << "Host IP: ";
 				std::string ip;
 				std::cin >> ip;
 				while(socket.connect(ip, port) != sf::Socket::Status::Done)
-					std::cout << "retrying...\n";
+					std::cout << "Retrying...\n";
 			}
 			else if(choice == "2")
 			{
-				std::cout << "local ip: " << sf::IpAddress::getLocalAddress() << "\n";
-				std::cout << "waiting for connections...\n";
+				std::cout << "Local IP: " << sf::IpAddress::getLocalAddress() << "\n";
+				std::cout << "Waiting for connection...\n";
 				sf::TcpListener listener;
 				listener.listen(port);
 				if(listener.accept(socket) != sf::Socket::Status::Done)
@@ -113,6 +113,7 @@ public:
 			}
 			else
 				throw std::runtime_error("invalid option");
+			std::cout << "Connection established\n";
 
 			create_window();
 			socket.setBlocking(false);
