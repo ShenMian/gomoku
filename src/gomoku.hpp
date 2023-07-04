@@ -104,7 +104,8 @@ public:
 			}
 			else if(choice == "2")
 			{
-				std::cout << "Local IP: " << sf::IpAddress::getLocalAddress() << "\n";
+				std::cout << "Local IP : " << sf::IpAddress::getLocalAddress() << "\n";
+				std::cout << "Public IP: " << sf::IpAddress::getPublicAddress() << "\n";
 				std::cout << "Waiting for connection...\n";
 				sf::TcpListener listener;
 				listener.listen(port);
