@@ -10,14 +10,25 @@ int main()
 		Gomoku gomoku;
 		gomoku.run();
 	}
-	catch(std::runtime_error& e)
+	catch(const std::runtime_error& e)
 	{
-		std::cerr << "ERROR: " << e.what() << "\n";
+		std::cerr << "Exception: " << e.what() << "\n";
 		std::cerr << "Press enter to exit...\n";
 		std::string line;
 		std::getline(std::cin, line);
+		std::getline(std::cin, line);
 		return 1;
 	}
+	catch(...)
+	{
+		std::cerr << "Unknown exception\b";
+		std::cerr << "Press enter to exit...\n";
+		std::string line;
+		std::getline(std::cin, line);
+		std::getline(std::cin, line);
+		return 1;
+	}
+
 
 	return 0;
 }
