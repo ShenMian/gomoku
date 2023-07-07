@@ -17,9 +17,17 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup enviroment (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          pip install conan
+          conan profile detect
+
       - name: Setup enviroment (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
+          pip install conan
+          conan profile detect
           sudo apt update
           sudo apt install libudev-dev libx11-dev libxrandr-dev libgl1-mesa-dev libalut-dev libvorbis-dev libsndfile1-dev libsfml-dev
 
