@@ -7,13 +7,16 @@ project(gomoku CXX)
 
 set(BUILD_SHARED_LIBS FALSE)
 
+include(FetchContent)
+FetchContent_Declare(SFML
+    GIT_REPOSITORY https://github.com/SFML/SFML.git
+    GIT_TAG 2.5.1)
+FetchContent_MakeAvailable(SFML)
+
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE src/main.cpp src/gomoku.hpp src/board.hpp)
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
-
-find_package(SFML CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE sfml-graphics sfml-network)
-target_compile_definitions(${PROJECT_NAME} PRIVATE SFML_STATIC)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
 if (WIN32 AND BUILD_SHARED_LIBS)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
