@@ -239,7 +239,8 @@ private:
 	{
 		sf::CircleShape chess_shape(chess_diameter_ / 2.f, 50);
 		chess_shape.setOrigin(chess_shape.getRadius(), chess_shape.getRadius());
-		chess_shape.setPosition(board_to_window_position({static_cast<float>(position.x), static_cast<float>(position.y)}));
+		chess_shape.setPosition(
+		    board_to_window_position({static_cast<float>(position.x), static_cast<float>(position.y)}));
 
 		switch(chess)
 		{
