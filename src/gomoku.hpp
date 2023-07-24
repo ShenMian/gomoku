@@ -242,7 +242,7 @@ private:
 			window_.clear(sf::Color(242, 208, 75));
 			board_.draw(window_);
 			window_.display();
-			
+
 			sf::Clock clock;
 			while(clock.getElapsedTime() < sf::seconds(5.f))
 				handle_window_event();
@@ -275,23 +275,29 @@ private:
 		reset();
 	}
 
-	uint8_t get_actions() const
+	uint8_t get_actions() const { return get_mouse_actions() | get_keyboard_actions() | get_controller_actions(); }
+
+	uint8_t get_mouse_actions() const
 	{
 		uint8_t actions = 0;
-
-		// handle mouse input
 		if(board_.window_to_board_position(sf::Mouse::getPosition(window_)).has_value() &&
 		   sf::Mouse::isButtonPressed(sf::Mouse::Left))
 			actions |= Action::PlaceChess;
+		return actions;
+	}
 
-		// handle keyboard input
+	uint8_t get_keyboard_actions() const
+	{
+		uint8_t actions = 0;
 		for(const auto& [key, action] : keyboard_actions)
-		{
 			if(sf::Keyboard::isKeyPressed(key))
 				actions |= action;
-		}
+		return actions;
+	}
 
-		// handle controller input
+	uint8_t get_controller_actions() const
+	{
+		uint8_t actions = 0;
 		for(int id = 0; id < 8; id++)
 		{
 			if(!sf::Joystick::isConnected(id))
@@ -320,7 +326,6 @@ private:
 					actions |= action;
 			}
 		}
-
 		return actions;
 	}
 
