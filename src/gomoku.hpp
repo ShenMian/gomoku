@@ -248,7 +248,7 @@ private:
 			return;
 		}
 
-		const auto chesses = board_.get_five_in_a_row(position);
+		const auto chesses = board_.get_five_in_a_row();
 		if(!chesses.has_value())
 			return;
 

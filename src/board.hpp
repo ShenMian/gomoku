@@ -56,9 +56,10 @@ public:
 	 *
 	 * @return 若存在则返回连成一线的五子, 否则返回空.
 	 */
-	std::optional<std::vector<sf::Vector2i>> get_five_in_a_row(const sf::Vector2i& position) const
+	std::optional<std::vector<sf::Vector2i>> get_five_in_a_row() const
 	{
-		const Chess chess = board_[position.x][position.y];
+		const auto  last_position = histories_.back();
+		const Chess chess         = board_[last_position.x][last_position.y];
 
 		const sf::Vector2i directions[8] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, -1}, {1, 1}, {-1, 1}, {1, -1}};
 		for(int direction_index = 0; direction_index < 8; direction_index += 2)
@@ -68,7 +69,7 @@ public:
 			auto add_chesses_on_direction = [&](const sf::Vector2i& direction) {
 				for(int i = 1; i <= 4; i++)
 				{
-					const sf::Vector2i pos = position + direction * i;
+					const sf::Vector2i pos = last_position + direction * i;
 					if(pos.x < 0 || pos.x >= size_.x || pos.y < 0 || pos.y >= size_.y)
 						break;
 
@@ -85,7 +86,7 @@ public:
 			if(chesses.size() >= 4)
 			{
 				chesses.resize(4);
-				chesses.push_back(position);
+				chesses.push_back(last_position);
 				return chesses;
 			}
 		}
