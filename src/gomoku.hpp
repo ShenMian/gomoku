@@ -214,7 +214,7 @@ private:
 	void reset()
 	{
 		status_          = Status::Initial;
-		chess_           = Chess::Null;
+		chess_           = Chess::Empty;
 		cursor_position_ = board_.size() / 2;
 		board_.reset();
 	}
@@ -367,10 +367,10 @@ private:
 		{
 			clock.restart();
 
-			if(board_.get_chess(cursor_position_) != Chess::Null)
+			if(board_.get_chess(cursor_position_) != Chess::Empty)
 				return false;
 
-			if(chess_ == Chess::Null)
+			if(chess_ == Chess::Empty)
 				chess_ = Chess::Black;
 
 			board_.place(cursor_position_, chess_);
