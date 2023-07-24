@@ -263,7 +263,10 @@ private:
 			window_.clear(sf::Color(242, 208, 75));
 			board_.draw(window_);
 			window_.display();
-			sf::sleep(sf::seconds(0.5f));
+
+			sf::Clock clock;
+			while(clock.getElapsedTime() < sf::seconds(0.5f))
+				handle_window_event();
 		}
 
 		reset();
