@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -27,26 +27,32 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: echo "PATH=$PATH:C:/msys64/mingw64/bin" >> $GITHUB_ENV
 
-      - name: Setup ninja (Ubuntu)
+      - name: Setup Ninja (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: seanmiddleditch/gha-setup-ninja@v4
+        with:
+          version: 1.11.1
+
+      - name: Setup Ninja (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt install ninja-build
 
-      - name: Setup cppkg
-        run: cargo install --git https://github.com/ShenMian/cppkg
+      - name: Generate CMake cache
+        run: cmake -S . -B target/release -Wno-dev -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Build (Release)
-        run: cppkg build -r
+        run: cmake --build target/release --config Release
 
       - name: Upload binaries (Windows)
         if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: gomoku-windows
-          path: target/release/gomoku.exe
+          name: sokoban-windows
+          path: target/release/sokoban.exe
 
       - name: Upload binaries (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: gomoku-ubuntu
-          path: target/release/gomoku
+          name: sokoban-ubuntu
+          path: target/release/sokoban
