@@ -2,7 +2,7 @@
 
 [![CodeFactor](https://www.codefactor.io/repository/github/shenmian/gomoku/badge)](https://www.codefactor.io/repository/github/shenmian/gomoku)
 
-A simple gomoku, using [SFML] framework, supports mouse/keyboard/controller input and LAN connection.  
+A simple gomoku, using [SFML] framework, supports mouse/keyboard and controller input, and offers both offline and LAN multiplayer modes.
 
 <p align="center"><img src="docs/screenshot.png" width=50% height=50%></p>
 
@@ -12,8 +12,8 @@ The rules are **free-style** and there are no forbidden moves. Players can decid
 
 ## Modes
 
-- Online: one person acts as a server and the other as a client to play games online.
-- Offline: playing games in turns with two players in an offline environment.
+- **Online**: One player serves as the host while the other joins as a client, allowing games to be played over a local network.
+- **Offline**: Two players take turns playing the game locally.
 
 ## Keymap
 
@@ -21,7 +21,7 @@ The rules are **free-style** and there are no forbidden moves. Players can decid
 
 | Key                                        | Action          |
 | ------------------------------------------ | --------------- |
-| `Space`                                    | Place chess     |
+| `Space`                                    | Place piece     |
 | `Backspace`                                | Undo            |
 | `W`/`A`/`S`/`D`/`Up`/`Down`/`Left`/`Right` | Move the cursor |
 
@@ -29,7 +29,7 @@ The rules are **free-style** and there are no forbidden moves. Players can decid
 
 | Key          | Action          |
 | ------------ | --------------- |
-| `A`/`Cross`  | Place chess     |
+| `A`/`Cross`  | Place piece     |
 | `B`/`Circle` | Undo            |
 | D-pad        | Move the cursor |
 
