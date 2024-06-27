@@ -13,12 +13,13 @@
 
 #include "board.hpp"
 
-inline sf::Packet&
-operator<<(sf::Packet& packet, const sf::Vector2i& position) {
+inline auto
+operator<<(sf::Packet& packet, const sf::Vector2i& position) -> sf::Packet& {
     return packet << position.x << position.y;
 }
 
-inline sf::Packet& operator>>(sf::Packet& packet, sf::Vector2i& position) {
+inline auto
+operator>>(sf::Packet& packet, sf::Vector2i& position) -> sf::Packet& {
     return packet >> position.x >> position.y;
 }
 
@@ -128,13 +129,15 @@ class Gomoku {
         while (window_.isOpen()) {
             handle_window_event();
 
-            if (window_.hasFocus())
+            if (window_.hasFocus()) {
                 handle_cursor_move();
+            }
 
             if (status_ == Status::Ready || status_ == Status::Initial) {
                 if (window_.hasFocus() && handle_piece_place()) {
-                    if (status_ == Status::Initial)
+                    if (status_ == Status::Initial) {
                         piece_ = Piece::Black;
+                    }
 
                     sf::Packet packet;
                     packet << cursor_position_;
@@ -147,8 +150,9 @@ class Gomoku {
             if (status_ == Status::Wait || status_ == Status::Initial) {
                 sf::Packet packet;
                 if (receive(socket, packet)) {
-                    if (status_ == Status::Initial)
+                    if (status_ == Status::Initial) {
                         piece_ = Piece::White;
+                    }
 
                     sf::Vector2i position;
                     packet >> position;
@@ -220,9 +224,11 @@ class Gomoku {
     }
 
     void handle_window_event() {
-        for (auto event = sf::Event {}; window_.pollEvent(event);)
-            if (event.type == sf::Event::Closed)
+        for (auto event = sf::Event {}; window_.pollEvent(event);) {
+            if (event.type == sf::Event::Closed) {
                 window_.close();
+            }
+        }
     }
 
     void handle_over(const sf::Vector2i& position) {
@@ -232,21 +238,24 @@ class Gomoku {
             window_.display();
 
             sf::Clock clock;
-            while (clock.getElapsedTime() < sf::seconds(5.f))
+            while (clock.getElapsedTime() < sf::seconds(5.f)) {
                 handle_window_event();
+            }
 
             reset();
             return;
         }
 
         const auto pieces = board_.get_five_in_a_row();
-        if (!pieces.has_value())
+        if (!pieces.has_value()) {
             return;
+        }
 
         const auto winner_piece = board_.get_piece(position);
         for (int i = 0; i < 10; i++) {
-            for (const auto& pos : pieces.value())
+            for (const auto& pos : pieces.value()) {
                 board_.place(pos, i % 2 == 0 ? Piece::Green : winner_piece);
+            }
             board_.place(position, i % 2 == 0 ? Piece::Green : winner_piece);
 
             window_.clear(sf::Color(242, 208, 75));
@@ -254,62 +263,78 @@ class Gomoku {
             window_.display();
 
             sf::Clock clock;
-            while (clock.getElapsedTime() < sf::seconds(0.5f))
+            while (clock.getElapsedTime() < sf::seconds(0.5f)) {
                 handle_window_event();
+            }
         }
 
         reset();
     }
 
-    uint8_t get_actions() const {
+    auto get_actions() const -> uint8_t {
         return get_mouse_actions() | get_keyboard_actions()
             | get_controller_actions();
     }
 
-    uint8_t get_mouse_actions() const {
+    auto get_mouse_actions() const -> uint8_t {
         uint8_t actions = 0;
         if (board_.window_to_board_position(sf::Mouse::getPosition(window_))
                 .has_value()
-            && sf::Mouse::isButtonPressed(sf::Mouse::Left))
+            && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
             actions |= Action::PlacePiece;
+        }
         return actions;
     }
 
-    uint8_t get_keyboard_actions() const {
+    auto get_keyboard_actions() const -> uint8_t {
         uint8_t actions = 0;
-        for (const auto& [key, action] : keyboard_actions)
-            if (sf::Keyboard::isKeyPressed(key))
+        for (const auto& [key, action] : keyboard_actions) {
+            if (sf::Keyboard::isKeyPressed(key)) {
                 actions |= action;
+            }
+        }
         return actions;
     }
 
-    uint8_t get_controller_actions() const {
+    auto get_controller_actions() const -> uint8_t {
         uint8_t actions = 0;
         for (int id = 0; id < 8; id++) {
-            if (!sf::Joystick::isConnected(id))
+            if (!sf::Joystick::isConnected(id)) {
                 break;
+            }
 
             const std::unordered_map<unsigned int, Action>* controller_actions;
             if (sf::Joystick::getIdentification(id).vendorId
-                == 0x045E /* XBOX */)
+                == 0x045E /* XBOX */) {
                 controller_actions = &xbox_controller_actions;
-            if (sf::Joystick::getIdentification(id).vendorId == 0x054C /* PS */)
+            }
+            if (sf::Joystick::getIdentification(id).vendorId
+                == 0x054C /* PS */) {
                 controller_actions = &ps_controller_actions;
-            else
+            } else {
                 controller_actions = &xbox_controller_actions;
+            }
 
-            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovY) == 100.f)
+            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovY)
+                == 100.f) {
                 actions |= Action::CursorMoveUp;
-            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovY) == -100.f)
+            }
+            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovY)
+                == -100.f) {
                 actions |= Action::CursorMoveDown;
-            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovX) == -100.f)
+            }
+            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovX)
+                == -100.f) {
                 actions |= Action::CursorMoveLeft;
-            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovX) == 100.f)
+            }
+            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovX)
+                == 100.f) {
                 actions |= Action::CursorMoveRight;
-
+            }
             for (const auto& [key, action] : *controller_actions) {
-                if (sf::Joystick::isButtonPressed(id, key))
+                if (sf::Joystick::isButtonPressed(id, key)) {
                     actions |= action;
+                }
             }
         }
         return actions;
@@ -320,12 +345,14 @@ class Gomoku {
         if (const auto result =
                 board_.window_to_board_position(sf::Mouse::getPosition(window_)
                 );
-            result.has_value())
+            result.has_value()) {
             cursor_position_ = result.value();
+        }
 
         static sf::Clock clock;
-        if (clock.getElapsedTime() < sf::seconds(0.2f))
+        if (clock.getElapsedTime() < sf::seconds(0.2f)) {
             return;
+        }
 
         const auto actions = get_actions();
 
@@ -352,7 +379,7 @@ class Gomoku {
             std::clamp(cursor_position_.y, 0, board_.size().y - 1);
     }
 
-    bool handle_piece_place() {
+    auto handle_piece_place() -> bool {
         static sf::Clock clock;
         if (clock.getElapsedTime() < sf::seconds(0.2f))
             return false;
@@ -362,11 +389,13 @@ class Gomoku {
         if (actions & Action::PlacePiece) {
             clock.restart();
 
-            if (board_.get_piece(cursor_position_) != Piece::Empty)
+            if (board_.get_piece(cursor_position_) != Piece::Empty) {
                 return false;
+            }
 
-            if (piece_ == Piece::Empty)
+            if (piece_ == Piece::Empty) {
                 piece_ = Piece::Black;
+            }
 
             board_.place(cursor_position_, piece_);
 
@@ -407,18 +436,21 @@ class Gomoku {
         throw std::runtime_error("unknown network error");
     }
 
-    static bool receive(sf::TcpSocket& socket, sf::Packet& packet) {
+    static auto receive(sf::TcpSocket& socket, sf::Packet& packet) -> bool {
         sf::Socket::Status status;
         do {
             status = socket.receive(packet);
         } while (status == sf::Socket::Status::Partial);
-        if (status == sf::Socket::Status::NotReady)
+        if (status == sf::Socket::Status::NotReady) {
             return false;
-        if (status == sf::Socket::Status::Done)
+        }
+        if (status == sf::Socket::Status::Done) {
             return true;
+        }
 
-        if (status == sf::Socket::Disconnected)
+        if (status == sf::Socket::Disconnected) {
             throw std::runtime_error("the network connection has been lost");
+        }
         throw std::runtime_error("unknown network error");
     }
 

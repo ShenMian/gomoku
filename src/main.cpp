@@ -3,7 +3,7 @@
 
 #include "gomoku.hpp"
 
-int main() {
+auto main() -> int {
     try {
         Gomoku gomoku;
         gomoku.run();

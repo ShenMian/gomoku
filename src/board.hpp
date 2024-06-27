@@ -40,7 +40,7 @@ class Board {
     /**
 	 * @brief 棋盘是否已被下满.
 	 */
-    bool is_full() const noexcept {
+    auto is_full() const noexcept -> bool {
         return histories_.size() == size_.x * size_.y;
     }
 
@@ -51,7 +51,7 @@ class Board {
 	 *
 	 * @return 若存在则返回连成一线的五子, 否则返回空.
 	 */
-    std::optional<std::vector<sf::Vector2i>> get_five_in_a_row() const {
+    auto get_five_in_a_row() const -> std::optional<std::vector<sf::Vector2i>> {
         const auto last_position = histories_.back();
         const Piece piece = board_[last_position.x][last_position.y];
 
@@ -125,7 +125,7 @@ class Board {
 	 *
 	 * @return 返回棋子.
 	 */
-    Piece get_piece(const sf::Vector2i& position) const {
+    auto get_piece(const sf::Vector2i& position) const -> Piece {
         return board_[position.x][position.y];
     }
 
@@ -134,8 +134,8 @@ class Board {
 	 *
 	 * @return 返回对应的棋盘坐标, 若坐标在棋盘外则返回空.
 	 */
-    std::optional<sf::Vector2i> window_to_board_position(sf::Vector2i position
-    ) const {
+    auto window_to_board_position(sf::Vector2i position
+    ) const -> std::optional<sf::Vector2i> {
         position.x = static_cast<int>(
             (position.x - position_.x) + (piece_offset_ / 2.f)
         );
@@ -158,8 +158,8 @@ class Board {
 	 *
 	 * @return 返回对应的窗口坐标.
 	 */
-    sf::Vector2f board_to_window_position(const sf::Vector2f& position
-    ) const noexcept {
+    auto board_to_window_position(const sf::Vector2f& position
+    ) const noexcept -> sf::Vector2f {
         return {
             position_.x + position.x * piece_offset_,
             position_.y + position.y * piece_offset_
@@ -245,10 +245,13 @@ class Board {
     }
 
     void draw_pieces(sf::RenderWindow& window) const {
-        for (int y = 0; y < board_.size(); y++)
-            for (int x = 0; x < board_[0].size(); x++)
-                if (board_[x][y] != Piece::Empty)
+        for (int y = 0; y < board_.size(); y++) {
+            for (int x = 0; x < board_[0].size(); x++) {
+                if (board_[x][y] != Piece::Empty) {
                     draw_piece(window, {x, y}, board_[x][y]);
+                }
+            }
+        }
     }
 
     /**
@@ -295,10 +298,12 @@ class Board {
 	 * @param window 要绘制的窗口.
 	 */
     void draw_mark(sf::RenderWindow& window) const {
-        if (histories_.empty())
+        if (histories_.empty()) {
             return;
-        if (histories_.back().x < 0 || histories_.back().y < 0)
+        }
+        if (histories_.back().x < 0 || histories_.back().y < 0) {
             return;
+        }
         sf::CircleShape mark(piece_diameter_ / 4.f / 2.f, 3);
         mark.setOrigin(mark.getRadius(), mark.getRadius());
         mark.setPosition(board_to_window_position(sf::Vector2f(histories_.back()
