@@ -1,6 +1,8 @@
 ﻿// Copyright 2023 ShenMian
 // License(Apache-2.0)
 
+#include <print>
+
 #include "gomoku.hpp"
 
 auto main() -> int {
@@ -9,11 +11,11 @@ auto main() -> int {
         gomoku.run();
         return 0;
     } catch (const std::runtime_error& e) {
-        std::cerr << "Exception: " << e.what() << "\n";
+        std::println("Exception: {}", e.what());
     } catch (...) {
-        std::cerr << "Unknown exception\n";
+        std::println("Unknown exception");
     }
-    std::cerr << "Press enter to exit...\n";
+    std::println("Press enter to exit...");
     std::string line;
     std::getline(std::cin, line);
     std::getline(std::cin, line);

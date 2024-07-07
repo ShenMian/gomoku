@@ -8,6 +8,7 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <print>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -63,18 +64,15 @@ class Gomoku {
     void run() {
         reset();
 
-        std::cout << R"(
+        std::println(R"(
   _____                __       
  / ___/__  __ _  ___  / /____ __
 / (_ / _ \/  ' \/ _ \/  '_/ // /
 \___/\___/_/_/_/\___/_/\_\\_,_/ 
-          Free-style
-)";
-        std::cout << R"(
+          Free-style)");
+        std::println(R"(
           1. Online
-          2. Offline
-
-)";
+          2. Offline)");
 
         std::string choice;
         std::getline(std::cin, choice);
@@ -82,34 +80,39 @@ class Gomoku {
         if (choice == "1") {
             const uint16_t port = 1234;
 
-            std::cout << R"(
+            std::println(R"(
           1. Client
-          2. Server
-
-)";
+          2. Server)");
             std::getline(std::cin, choice);
 
             sf::TcpSocket socket;
 
             if (choice == "1") {
-                std::cout << "Host IP: ";
+                std::print("Host IP: ");
                 std::string ip;
                 std::cin >> ip;
+
                 while (socket.connect(ip, port) != sf::Socket::Status::Done)
-                    std::cout << "Retrying...\n";
+                    std::println("Retrying...");
             } else if (choice == "2") {
-                std::cout << "Local IP : " << sf::IpAddress::getLocalAddress()
-                          << "\n";
-                std::cout << "Public IP: " << sf::IpAddress::getPublicAddress()
-                          << "\n";
-                std::cout << "Waiting for connection...\n";
+                std::println(
+                    "Local IP : {}",
+                    sf::IpAddress::getLocalAddress().toString()
+                );
+                std::println(
+                    "Public IP: {}",
+                    sf::IpAddress::getPublicAddress().toString()
+                );
+                std::println("Waiting for connection...");
+
                 sf::TcpListener listener;
                 listener.listen(port);
                 if (listener.accept(socket) != sf::Socket::Status::Done)
                     throw std::runtime_error("failed to accept socket");
-            } else
+            } else {
                 throw std::runtime_error("invalid option");
-            std::cout << "Connection established\n";
+            }
+            std::println("Connection established");
 
             create_window();
             socket.setBlocking(false);
