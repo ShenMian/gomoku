@@ -1,4 +1,4 @@
-﻿name: Build cmake
+﻿name: Build xmake
 
 on: [push, pull_request]
 
@@ -27,32 +27,21 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: echo "PATH=$PATH:C:/msys64/mingw64/bin" >> $GITHUB_ENV
 
-      - name: Setup Ninja (Windows)
-        if: matrix.os == 'windows-latest'
-        uses: seanmiddleditch/gha-setup-ninja@v4
-        with:
-          version: 1.11.1
-
-      - name: Setup Ninja (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt install ninja-build
-
-      - name: Generate CMake cache
-        run: cmake -S . -B target/release -Wno-dev -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - uses: xmake-io/github-action-setup-xmake@v1
 
       - name: Build (Release)
-        run: cmake --build target/release --config Release
+        run: xmake -y
 
       - name: Upload binaries (Windows)
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: gomoku-windows
-          path: target/release/gomoku.exe
+          path: build/windows/x64/release/gomoku.exe
 
       - name: Upload binaries (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
           name: gomoku-ubuntu
-          path: target/release/gomoku
+          path: build/linux/x64/release/gomoku
