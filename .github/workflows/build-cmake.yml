@@ -47,12 +47,12 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: sokoban-windows
-          path: target/release/sokoban.exe
+          name: gomoku-windows
+          path: target/release/gomoku.exe
 
       - name: Upload binaries (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: sokoban-ubuntu
-          path: target/release/sokoban
+          name: gomoku-ubuntu
+          path: target/release/gomoku
