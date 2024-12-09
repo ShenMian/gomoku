@@ -6,8 +6,6 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 #include <iostream>
-#include <memory>
-#include <optional>
 #include <print>
 #include <stdexcept>
 #include <unordered_map>
@@ -46,7 +44,7 @@ const std::unordered_map<sf::Keyboard::Key, Action> keyboard_actions = {
     {sf::Keyboard::Key::Left, Action::CursorMoveLeft},
     {sf::Keyboard::Key::Right, Action::CursorMoveRight},
     {sf::Keyboard::Key::Space, Action::PlacePiece},
-    {sf::Keyboard::Key::BackSpace, Action::Undo},
+    {sf::Keyboard::Key::Backspace, Action::Undo},
 };
 
 const std::unordered_map<unsigned int, Action> xbox_controller_actions = {
@@ -65,10 +63,10 @@ class Gomoku {
         reset();
 
         std::println(R"(
-  _____                __       
+  _____                __
  / ___/__  __ _  ___  / /____ __
 / (_ / _ \/  ' \/ _ \/  '_/ // /
-\___/\___/_/_/_/\___/_/\_\\_,_/ 
+\___/\___/_/_/_/\___/_/\_\\_,_/
           Free-style)");
         std::println(R"(
           1. Online
@@ -92,23 +90,28 @@ class Gomoku {
                 std::string ip;
                 std::cin >> ip;
 
-                while (socket.connect(ip, port) != sf::Socket::Status::Done)
+                while (socket.connect(sf::IpAddress::resolve(ip).value(), port)
+                       != sf::Socket::Status::Done)
                     std::println("Retrying...");
             } else if (choice == "2") {
                 std::println(
                     "Local IP : {}",
-                    sf::IpAddress::getLocalAddress().toString()
+                    sf::IpAddress::getLocalAddress().value().toString()
                 );
                 std::println(
                     "Public IP: {}",
-                    sf::IpAddress::getPublicAddress().toString()
+                    sf::IpAddress::getPublicAddress().value().toString()
                 );
-                std::println("Waiting for connection...");
 
                 sf::TcpListener listener;
-                listener.listen(port);
-                if (listener.accept(socket) != sf::Socket::Status::Done)
+                if (listener.listen(port) != sf::Socket::Status::Done) {
+                    throw std::runtime_error("failed to listen");
+                }
+                std::println("Waiting for connection...");
+
+                if (listener.accept(socket) != sf::Socket::Status::Done) {
                     throw std::runtime_error("failed to accept socket");
+                }
             } else {
                 throw std::runtime_error("invalid option");
             }
@@ -202,7 +205,7 @@ class Gomoku {
         );
 
         window_.create(
-            sf::VideoMode {window_size.x, window_size.y},
+            sf::VideoMode({window_size.x, window_size.y}),
             "Gomoku",
             sf::Style::Close
         );
@@ -218,7 +221,7 @@ class Gomoku {
 
     void draw_cursor() {
         sf::CircleShape cursor(40 / 2.f, 50);
-        cursor.setOrigin(cursor.getRadius(), cursor.getRadius());
+        cursor.setOrigin({cursor.getRadius(), cursor.getRadius()});
         cursor.setFillColor(sf::Color(255 / 2, 255 / 2, 255 / 2, 150));
         cursor.setPosition(
             board_.board_to_window_position(sf::Vector2f(cursor_position_))
@@ -227,8 +230,8 @@ class Gomoku {
     }
 
     void handle_window_event() {
-        for (auto event = sf::Event {}; window_.pollEvent(event);) {
-            if (event.type == sf::Event::Closed) {
+        while (auto event = window_.pollEvent()) {
+            if (event->is<sf::Event::Closed>()) {
                 window_.close();
             }
         }
@@ -283,7 +286,7 @@ class Gomoku {
         uint8_t actions = 0;
         if (board_.window_to_board_position(sf::Mouse::getPosition(window_))
                 .has_value()
-            && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+            && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
             actions |= Action::PlacePiece;
         }
         return actions;
@@ -318,19 +321,19 @@ class Gomoku {
                 controller_actions = &xbox_controller_actions;
             }
 
-            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovY)
+            if (sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::PovY)
                 == 100.f) {
                 actions |= Action::CursorMoveUp;
             }
-            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovY)
+            if (sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::PovY)
                 == -100.f) {
                 actions |= Action::CursorMoveDown;
             }
-            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovX)
+            if (sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::PovX)
                 == -100.f) {
                 actions |= Action::CursorMoveLeft;
             }
-            if (sf::Joystick::getAxisPosition(id, sf::Joystick::PovX)
+            if (sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::PovX)
                 == 100.f) {
                 actions |= Action::CursorMoveRight;
             }
@@ -434,7 +437,7 @@ class Gomoku {
         if (status == sf::Socket::Status::Done)
             return;
 
-        if (status == sf::Socket::Disconnected)
+        if (status == sf::Socket::Status::Disconnected)
             throw std::runtime_error("the network connection has been lost");
         throw std::runtime_error("unknown network error");
     }
@@ -451,7 +454,7 @@ class Gomoku {
             return true;
         }
 
-        if (status == sf::Socket::Disconnected) {
+        if (status == sf::Socket::Status::Disconnected) {
             throw std::runtime_error("the network connection has been lost");
         }
         throw std::runtime_error("unknown network error");

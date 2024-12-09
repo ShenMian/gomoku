@@ -1,4 +1,4 @@
-﻿// Copyright 2023 ShenMian
+// Copyright 2023 ShenMian
 // License(Apache-2.0)
 
 #pragma once
@@ -191,7 +191,7 @@ class Board {
         sf::RectangleShape horizontal_line(
             {(size_.x - 1) * piece_offset_, line_thickness}
         );
-        horizontal_line.setOrigin(0, horizontal_line.getSize().y / 2);
+        horizontal_line.setOrigin({0, horizontal_line.getSize().y / 2});
         horizontal_line.setFillColor(sf::Color::Black);
         for (int y = 0; y < size_.y; y++) {
             horizontal_line.setPosition(
@@ -203,7 +203,7 @@ class Board {
         sf::RectangleShape vertical_line(
             {line_thickness, (size_.y - 1) * piece_offset_}
         );
-        vertical_line.setOrigin(vertical_line.getSize().x / 2, 0);
+        vertical_line.setOrigin({vertical_line.getSize().x / 2, 0});
         vertical_line.setFillColor(sf::Color::Black);
         for (int x = 0; x < size_.x; x++) {
             vertical_line.setPosition(
@@ -220,7 +220,7 @@ class Board {
 	 */
     void draw_stars(sf::RenderWindow& window) const {
         sf::CircleShape star(5.f, 10);
-        star.setOrigin(star.getRadius(), star.getRadius());
+        star.setOrigin({star.getRadius(), star.getRadius()});
         star.setFillColor(sf::Color::Black);
 
         // 绘制星
@@ -267,7 +267,8 @@ class Board {
         Piece piece
     ) const {
         sf::CircleShape piece_shape(piece_diameter_ / 2.f, 50);
-        piece_shape.setOrigin(piece_shape.getRadius(), piece_shape.getRadius());
+        piece_shape.setOrigin({piece_shape.getRadius(), piece_shape.getRadius()}
+        );
         piece_shape.setPosition(board_to_window_position(
             {static_cast<float>(position.x), static_cast<float>(position.y)}
         ));
@@ -305,7 +306,7 @@ class Board {
             return;
         }
         sf::CircleShape mark(piece_diameter_ / 4.f / 2.f, 3);
-        mark.setOrigin(mark.getRadius(), mark.getRadius());
+        mark.setOrigin({mark.getRadius(), mark.getRadius()});
         mark.setPosition(board_to_window_position(sf::Vector2f(histories_.back()
         )));
         mark.setFillColor(sf::Color::Red);
