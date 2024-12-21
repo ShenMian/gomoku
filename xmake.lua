@@ -1,4 +1,4 @@
-add_requires("sfml 2.6.*")
+add_requires("sfml 3.0.0")
 
 set_languages("c++23")
 

@@ -1,7 +1,7 @@
 # Copyright 2023 ShenMian
 # License(Apache-2.0)
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.24)
 
 project(gomoku CXX)
 
@@ -10,12 +10,12 @@ set(BUILD_SHARED_LIBS FALSE)
 include(FetchContent)
 FetchContent_Declare(SFML
     GIT_REPOSITORY https://github.com/SFML/SFML.git
-    GIT_TAG 2.6.1)
+    GIT_TAG 3.0.0)
 FetchContent_MakeAvailable(SFML)
 
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE src/main.cpp src/gomoku.hpp src/board.hpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE sfml-graphics sfml-network)
+target_link_libraries(${PROJECT_NAME} PRIVATE SFML::Graphics SFML::Network)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
 if (WIN32 AND BUILD_SHARED_LIBS)
