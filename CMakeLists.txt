@@ -10,7 +10,7 @@ set(BUILD_SHARED_LIBS FALSE)
 include(FetchContent)
 FetchContent_Declare(SFML
     GIT_REPOSITORY https://github.com/SFML/SFML.git
-    GIT_TAG 3.0.0-rc.2)
+    GIT_TAG 3.0.0)
 FetchContent_MakeAvailable(SFML)
 
 add_executable(${PROJECT_NAME})
