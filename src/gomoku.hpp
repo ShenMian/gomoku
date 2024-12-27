@@ -68,14 +68,20 @@ class Gomoku {
 / (_ / _ \/  ' \/ _ \/  '_/ // /
 \___/\___/_/_/_/\___/_/\_\\_,_/
           Free-style)");
-        std::println(R"(
-          1. Online
-          2. Offline)");
 
         std::string choice;
+
+        std::println(R"(
+          1. Offline
+          2. Online)");
         std::getline(std::cin, choice);
 
         if (choice == "1") {
+            create_window();
+            piece_ = Piece::Black;
+
+            offline();
+        } else if (choice == "2") {
             const uint16_t port = 1234;
 
             std::println(R"(
@@ -121,16 +127,31 @@ class Gomoku {
             socket.setBlocking(false);
 
             online(socket);
-        } else if (choice == "2") {
-            create_window();
-            piece_ = Piece::Black;
-
-            offline();
-        } else
+        } else {
             throw std::runtime_error("invalid option");
+        }
     }
 
   private:
+    void offline() {
+        while (window_.isOpen()) {
+            handle_window_event();
+
+            if (window_.hasFocus()) {
+                handle_undo();
+                handle_cursor_move();
+
+                if (handle_piece_place()) {
+                    handle_over(cursor_position_);
+                    piece_ =
+                        piece_ == Piece::Black ? Piece::White : Piece::Black;
+                }
+            }
+
+            render();
+        }
+    }
+
     void online(sf::TcpSocket& socket) {
         while (window_.isOpen()) {
             handle_window_event();
@@ -170,25 +191,6 @@ class Gomoku {
 
                     status_ = Status::Ready;
                     handle_over(position);
-                }
-            }
-
-            render();
-        }
-    }
-
-    void offline() {
-        while (window_.isOpen()) {
-            handle_window_event();
-
-            if (window_.hasFocus()) {
-                handle_undo();
-                handle_cursor_move();
-
-                if (handle_piece_place()) {
-                    handle_over(cursor_position_);
-                    piece_ =
-                        piece_ == Piece::Black ? Piece::White : Piece::Black;
                 }
             }
 
@@ -387,8 +389,9 @@ class Gomoku {
 
     auto handle_piece_place() -> bool {
         static sf::Clock clock;
-        if (clock.getElapsedTime() < sf::seconds(0.2f))
+        if (clock.getElapsedTime() < sf::seconds(0.2f)) {
             return false;
+        }
 
         const auto actions = get_actions();
 
@@ -434,11 +437,13 @@ class Gomoku {
         do {
             status = socket.send(packet);
         } while (status == sf::Socket::Status::Partial);
-        if (status == sf::Socket::Status::Done)
+        if (status == sf::Socket::Status::Done) {
             return;
+        }
 
-        if (status == sf::Socket::Status::Disconnected)
+        if (status == sf::Socket::Status::Disconnected) {
             throw std::runtime_error("the network connection has been lost");
+        }
         throw std::runtime_error("unknown network error");
     }
 
