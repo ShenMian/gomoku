@@ -5,19 +5,23 @@
 
 #include "gomoku.hpp"
 
-auto main() -> int {
-    try {
-        Gomoku gomoku;
-        gomoku.run();
-        return 0;
-    } catch (const std::runtime_error& e) {
-        std::println("Exception: {}", e.what());
-    } catch (...) {
-        std::println("Unknown exception");
-    }
+auto wait_for_enter() -> void {
     std::println("Press enter to exit...");
     std::string line;
     std::getline(std::cin, line);
     std::getline(std::cin, line);
-    return 1;
+}
+
+auto main() -> int {
+    try {
+        Gomoku gomoku;
+        gomoku.run();
+    } catch (const std::runtime_error& e) {
+        std::println("Exception: {}", e.what());
+        wait_for_enter();
+    } catch (...) {
+        std::println("Unknown exception");
+        wait_for_enter();
+    }
+    return 0;
 }
