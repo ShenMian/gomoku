@@ -12,13 +12,13 @@
 
 #include "board.hpp"
 
-inline auto
-operator<<(sf::Packet& packet, const sf::Vector2i& position) -> sf::Packet& {
+inline auto operator<<(sf::Packet& packet, const sf::Vector2i& position)
+    -> sf::Packet& {
     return packet << position.x << position.y;
 }
 
-inline auto
-operator>>(sf::Packet& packet, sf::Vector2i& position) -> sf::Packet& {
+inline auto operator>>(sf::Packet& packet, sf::Vector2i& position)
+    -> sf::Packet& {
     return packet >> position.x >> position.y;
 }
 
@@ -59,7 +59,7 @@ const std::unordered_map<unsigned int, Action> ps_controller_actions = {
 
 class Gomoku {
   public:
-    void run() {
+    auto run() -> void {
         reset();
 
         std::println(R"(
@@ -133,7 +133,7 @@ class Gomoku {
     }
 
   private:
-    void offline() {
+    auto offline() -> void {
         while (window_.isOpen()) {
             handle_window_event();
 
@@ -152,7 +152,7 @@ class Gomoku {
         }
     }
 
-    void online(sf::TcpSocket& socket) {
+    auto online(sf::TcpSocket& socket) -> void {
         while (window_.isOpen()) {
             handle_window_event();
 
@@ -198,7 +198,7 @@ class Gomoku {
         }
     }
 
-    void create_window() {
+    auto create_window() -> void {
         const sf::Vector2u window_size(
             static_cast<unsigned>(board_.position().x) * 2
                 + (static_cast<unsigned>(board_.size().x) - 1) * 46,
@@ -214,14 +214,14 @@ class Gomoku {
         window_.setFramerateLimit(60);
     }
 
-    void reset() {
+    auto reset() -> void {
         status_ = Status::Initial;
         piece_ = Piece::Empty;
         cursor_position_ = board_.size() / 2;
         board_.reset();
     }
 
-    void draw_cursor() {
+    auto draw_cursor() -> void {
         sf::CircleShape cursor(40 / 2.f, 50);
         cursor.setOrigin({cursor.getRadius(), cursor.getRadius()});
         cursor.setFillColor(sf::Color(255 / 2, 255 / 2, 255 / 2, 150));
@@ -231,7 +231,7 @@ class Gomoku {
         window_.draw(cursor);
     }
 
-    void handle_window_event() {
+    auto handle_window_event() -> void {
         while (auto event = window_.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
                 window_.close();
@@ -239,7 +239,7 @@ class Gomoku {
         }
     }
 
-    void handle_over(const sf::Vector2i& position) {
+    auto handle_over(const sf::Vector2i& position) -> void {
         if (board_.is_full()) {
             window_.clear(sf::Color(242, 208, 75));
             board_.draw(window_);
@@ -348,7 +348,7 @@ class Gomoku {
         return actions;
     }
 
-    void handle_cursor_move() {
+    auto handle_cursor_move() -> void {
         // handle mouse movement
         if (const auto result =
                 board_.window_to_board_position(sf::Mouse::getPosition(window_)
@@ -413,7 +413,7 @@ class Gomoku {
         return false;
     }
 
-    void handle_undo() {
+    auto handle_undo() -> void {
         auto actions = get_actions();
         if (actions & Action::Undo) {
             board_.undo();
@@ -425,14 +425,14 @@ class Gomoku {
         }
     }
 
-    void render() {
+    auto render() -> void {
         window_.clear(sf::Color(242, 208, 75));
         board_.draw(window_);
         draw_cursor();
         window_.display();
     }
 
-    static void send(sf::TcpSocket& socket, sf::Packet& packet) {
+    static auto send(sf::TcpSocket& socket, sf::Packet& packet) -> void {
         sf::Socket::Status status;
         do {
             status = socket.send(packet);

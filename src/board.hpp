@@ -20,7 +20,7 @@ class Board {
 	 * @param position 落子位置.
 	 * @param piece    棋子类型.
 	 */
-    void place(const sf::Vector2i& position, Piece piece) {
+    auto place(const sf::Vector2i& position, Piece piece) -> void {
         board_[position.x][position.y] = piece;
         if (piece != Piece::Black && piece != Piece::White)
             return;
@@ -30,7 +30,7 @@ class Board {
     /**
 	 * @brief 悔棋.
 	 */
-    void undo() {
+    auto undo() -> void {
         if (histories_.empty())
             return;
         place(histories_.back(), Piece::Empty);
@@ -100,7 +100,7 @@ class Board {
 	 *
 	 * @param window 窗口.
 	 */
-    void draw(sf::RenderWindow& window) const {
+    auto draw(sf::RenderWindow& window) const -> void {
         draw_board(window);
         draw_pieces(window);
         draw_mark(window);
@@ -109,7 +109,7 @@ class Board {
     /**
 	 * @brief 重置棋盘.
 	 */
-    void reset() {
+    auto reset() -> void {
         board_.clear();
         board_.resize(size_.x);
         for (auto& row : board_)
@@ -134,8 +134,8 @@ class Board {
 	 *
 	 * @return 返回对应的棋盘坐标, 若坐标在棋盘外则返回空.
 	 */
-    auto window_to_board_position(sf::Vector2i position
-    ) const -> std::optional<sf::Vector2i> {
+    auto window_to_board_position(sf::Vector2i position) const
+        -> std::optional<sf::Vector2i> {
         position.x = static_cast<int>(
             (position.x - position_.x) + (piece_offset_ / 2.f)
         );
@@ -158,8 +158,8 @@ class Board {
 	 *
 	 * @return 返回对应的窗口坐标.
 	 */
-    auto board_to_window_position(const sf::Vector2f& position
-    ) const noexcept -> sf::Vector2f {
+    auto board_to_window_position(const sf::Vector2f& position) const noexcept
+        -> sf::Vector2f {
         return {
             position_.x + position.x * piece_offset_,
             position_.y + position.y * piece_offset_
@@ -178,7 +178,7 @@ class Board {
     /**
 	 * @brief 绘制棋盘.
 	 */
-    void draw_board(sf::RenderWindow& window) const {
+    auto draw_board(sf::RenderWindow& window) const -> void {
         const float line_thickness = 2.f;
 
         sf::RectangleShape board_shape(
@@ -218,7 +218,7 @@ class Board {
     /**
 	 * @brief 绘制天元和星.
 	 */
-    void draw_stars(sf::RenderWindow& window) const {
+    auto draw_stars(sf::RenderWindow& window) const -> void {
         sf::CircleShape star(5.f, 10);
         star.setOrigin({star.getRadius(), star.getRadius()});
         star.setFillColor(sf::Color::Black);
@@ -244,7 +244,7 @@ class Board {
         window.draw(star);
     }
 
-    void draw_pieces(sf::RenderWindow& window) const {
+    auto draw_pieces(sf::RenderWindow& window) const -> void {
         for (int y = 0; y < board_.size(); y++) {
             for (int x = 0; x < board_[0].size(); x++) {
                 if (board_[x][y] != Piece::Empty) {
@@ -261,11 +261,11 @@ class Board {
 	 * @param position 棋子的位置.
 	 * @param piece    棋子.
 	 */
-    void draw_piece(
+    auto draw_piece(
         sf::RenderWindow& window,
         const sf::Vector2i& position,
         Piece piece
-    ) const {
+    ) const -> void {
         sf::CircleShape piece_shape(piece_diameter_ / 2.f, 50);
         piece_shape.setOrigin({piece_shape.getRadius(), piece_shape.getRadius()}
         );
@@ -298,7 +298,7 @@ class Board {
 	 *
 	 * @param window 要绘制的窗口.
 	 */
-    void draw_mark(sf::RenderWindow& window) const {
+    auto draw_mark(sf::RenderWindow& window) const -> void {
         if (histories_.empty()) {
             return;
         }
