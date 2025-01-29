@@ -69,63 +69,17 @@ class Gomoku {
 \___/\___/_/_/_/\___/_/\_\\_,_/
           Free-style)");
 
-        std::string choice;
-
         std::println(R"(
           1. Offline
           2. Online)");
+        std::string choice;
         std::getline(std::cin, choice);
 
         if (choice == "1") {
-            create_window();
-            piece_ = Piece::Black;
-
+            setup_offline();
             offline();
         } else if (choice == "2") {
-            const uint16_t port = 1234;
-
-            std::println(R"(
-          1. Client
-          2. Server)");
-            std::getline(std::cin, choice);
-
-            sf::TcpSocket socket;
-
-            if (choice == "1") {
-                std::print("Host IP: ");
-                std::string ip;
-                std::cin >> ip;
-
-                while (socket.connect(sf::IpAddress::resolve(ip).value(), port)
-                       != sf::Socket::Status::Done)
-                    std::println("Retrying...");
-            } else if (choice == "2") {
-                std::println(
-                    "Local IP : {}",
-                    sf::IpAddress::getLocalAddress().value().toString()
-                );
-                std::println(
-                    "Public IP: {}",
-                    sf::IpAddress::getPublicAddress().value().toString()
-                );
-
-                sf::TcpListener listener;
-                if (listener.listen(port) != sf::Socket::Status::Done) {
-                    throw std::runtime_error("failed to listen");
-                }
-                std::println("Waiting for connection...");
-
-                if (listener.accept(socket) != sf::Socket::Status::Done) {
-                    throw std::runtime_error("failed to accept socket");
-                }
-            } else {
-                throw std::runtime_error("invalid option");
-            }
-            std::println("Connection established");
-
-            create_window();
-            socket.setBlocking(false);
-
+            auto socket = setup_online();
             online(socket);
         } else {
             throw std::runtime_error("invalid option");
@@ -133,6 +87,58 @@ class Gomoku {
     }
 
   private:
+    auto setup_offline() -> void {
+        create_window();
+        piece_ = Piece::Black;
+    }
+
+    auto setup_online() -> sf::TcpSocket {
+        const uint16_t port = 1234;
+
+        std::println(R"(
+          1. Client
+          2. Server)");
+        std::string choice;
+        std::getline(std::cin, choice);
+
+        sf::TcpSocket socket;
+
+        if (choice == "1") {
+            std::print("Host IP: ");
+            std::string ip;
+            std::cin >> ip;
+
+            while (socket.connect(sf::IpAddress::resolve(ip).value(), port)
+                   != sf::Socket::Status::Done)
+                std::println("Retrying...");
+        } else if (choice == "2") {
+            std::println(
+                "Local IP : {}",
+                sf::IpAddress::getLocalAddress().value().toString()
+            );
+            std::println(
+                "Public IP: {}",
+                sf::IpAddress::getPublicAddress().value().toString()
+            );
+
+            sf::TcpListener listener;
+            if (listener.listen(port) != sf::Socket::Status::Done) {
+                throw std::runtime_error("failed to listen");
+            }
+            std::println("Waiting for connection...");
+
+            if (listener.accept(socket) != sf::Socket::Status::Done) {
+                throw std::runtime_error("failed to accept socket");
+            }
+        } else {
+            throw std::runtime_error("invalid option");
+        }
+        std::println("Connection established");
+
+        create_window();
+        socket.setBlocking(false);
+    }
+
     auto offline() -> void {
         while (window_.isOpen()) {
             handle_window_event();
