@@ -135,8 +135,10 @@ class Gomoku {
         }
         std::println("Connection established");
 
-        create_window();
         socket.setBlocking(false);
+        create_window();
+
+        return socket;
     }
 
     auto offline() -> void {
