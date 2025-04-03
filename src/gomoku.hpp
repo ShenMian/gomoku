@@ -110,8 +110,9 @@ class Gomoku {
             std::cin >> ip;
 
             while (socket.connect(sf::IpAddress::resolve(ip).value(), port)
-                   != sf::Socket::Status::Done)
+                   != sf::Socket::Status::Done) {
                 std::println("Retrying...");
+                   }
         } else if (choice == "2") {
             std::println(
                 "Local IP : {}",
@@ -209,10 +210,10 @@ class Gomoku {
 
     auto create_window() -> void {
         const sf::Vector2u window_size(
-            static_cast<unsigned>(board_.position().x) * 2
-                + (static_cast<unsigned>(board_.size().x) - 1) * 46,
-            static_cast<unsigned>(board_.position().y) * 2
-                + (static_cast<unsigned>(board_.size().y) - 1) * 46
+            static_cast<unsigned int>(board_.position().x) * 2u
+                + (static_cast<unsigned int>(board_.size().x) - 1) * 46u,
+            static_cast<unsigned int>(board_.position().y) * 2u
+                + (static_cast<unsigned int>(board_.size().y) - 1) * 46u
         );
 
         window_.create(
@@ -320,13 +321,14 @@ class Gomoku {
                 break;
             }
 
+            constexpr uint16_t XBOX_VENDOR_ID = 0x045E;
+            constexpr uint16_t PS_VENDOR_ID = 0x054C;
             const std::unordered_map<unsigned int, Action>* controller_actions;
             if (sf::Joystick::getIdentification(id).vendorId
-                == 0x045E /* XBOX */) {
+                == XBOX_VENDOR_ID) {
                 controller_actions = &xbox_controller_actions;
-            }
-            if (sf::Joystick::getIdentification(id).vendorId
-                == 0x054C /* PS */) {
+            } else if (sf::Joystick::getIdentification(id).vendorId
+                       == PS_VENDOR_ID) {
                 controller_actions = &ps_controller_actions;
             } else {
                 controller_actions = &xbox_controller_actions;

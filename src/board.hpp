@@ -23,8 +23,9 @@ class Board {
 	 */
     auto place(const sf::Vector2i& position, Piece piece) -> void {
         board_[position.x][position.y] = piece;
-        if (piece != Piece::Black && piece != Piece::White)
+        if (piece != Piece::Black && piece != Piece::White) {
             return;
+        }
         histories_.push_back(position);
     }
 
@@ -32,8 +33,9 @@ class Board {
 	 * @brief 悔棋.
 	 */
     auto undo() -> void {
-        if (histories_.empty())
+        if (histories_.empty()) {
             return;
+        }
         place(histories_.back(), Piece::Empty);
         histories_.pop_back();
     }
@@ -66,7 +68,7 @@ class Board {
             {-1, 1},
             {1, -1}
         };
-        for (int direction_index = 0; direction_index < 8;
+        for (size_t direction_index = 0; direction_index < 8;
              direction_index += 2) {
             std::vector<sf::Vector2i> pieces;
 
@@ -74,13 +76,15 @@ class Board {
                 for (int i = 1; i <= 4; i++) {
                     const sf::Vector2i pos = last_position + direction * i;
                     if (pos.x < 0 || pos.x >= size_.x || pos.y < 0
-                        || pos.y >= size_.y)
+                        || pos.y >= size_.y) {
                         break;
+                    }
 
-                    if (board_[pos.x][pos.y] == piece)
+                    if (board_[pos.x][pos.y] == piece) {
                         pieces.emplace_back(pos.x, pos.y);
-                    else
+                    } else {
                         break;
+                    }
                 }
             };
 
@@ -113,8 +117,9 @@ class Board {
     auto reset() -> void {
         board_.clear();
         board_.resize(size_.x);
-        for (auto& row : board_)
+        for (auto& row : board_) {
             row.resize(size_.y);
+        }
 
         histories_.clear();
     }
@@ -143,13 +148,15 @@ class Board {
         position.y = static_cast<int>(
             (position.y - position_.y) + (piece_offset_ / 2.f)
         );
-        if (position.x < 0 || position.y < 0)
+        if (position.x < 0 || position.y < 0) {
             return std::nullopt;
+        }
 
         position.x /= static_cast<int>(piece_offset_);
         position.y /= static_cast<int>(piece_offset_);
-        if (position.x >= size_.x || position.y >= size_.y)
+        if (position.x >= size_.x || position.y >= size_.y) {
             return std::nullopt;
+        }
 
         return position;
     }
@@ -161,10 +168,7 @@ class Board {
 	 */
     auto board_to_window_position(const sf::Vector2f& position) const noexcept
         -> sf::Vector2f {
-        return {
-            position_.x + position.x * piece_offset_,
-            position_.y + position.y * piece_offset_
-        };
+        return position_ + position * piece_offset_;
     }
 
     const auto& position() const noexcept {
@@ -246,10 +250,10 @@ class Board {
     }
 
     auto draw_pieces(sf::RenderWindow& window) const -> void {
-        for (int y = 0; y < board_.size(); y++) {
-            for (int x = 0; x < board_[0].size(); x++) {
+        for (size_t y = 0; y < board_.size(); y++) {
+            for (size_t x = 0; x < board_[0].size(); x++) {
                 if (board_[x][y] != Piece::Empty) {
-                    draw_piece(window, {x, y}, board_[x][y]);
+                    draw_piece(window, sf::Vector2i(x, y), board_[x][y]);
                 }
             }
         }
@@ -270,9 +274,8 @@ class Board {
         sf::CircleShape piece_shape(piece_diameter_ / 2.f, 50);
         piece_shape.setOrigin({piece_shape.getRadius(), piece_shape.getRadius()}
         );
-        piece_shape.setPosition(board_to_window_position(
-            {static_cast<float>(position.x), static_cast<float>(position.y)}
-        ));
+        piece_shape.setPosition(board_to_window_position(sf::Vector2f(position))
+        );
 
         switch (piece) {
             case Piece::White:
