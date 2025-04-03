@@ -5,6 +5,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
+#include <cstdint>
 #include <iostream>
 #include <print>
 #include <stdexcept>
