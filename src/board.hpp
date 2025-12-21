@@ -5,7 +5,9 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <array>
 #include <optional>
+#include <ranges>
 
 enum class Piece { Empty, Black, White, Highlight };
 
@@ -43,8 +45,8 @@ class Board {
     /**
 	 * @brief 棋盘是否已被下满.
 	 */
-    auto is_full() const noexcept -> bool {
-        return histories_.size() == size_.x * size_.y;
+    [[nodiscard]] auto is_full() const noexcept -> bool {
+        return histories_.size() == static_cast<size_t>(size_.x * size_.y);
     }
 
     /**
@@ -54,11 +56,12 @@ class Board {
 	 *
 	 * @return 若存在则返回连成一线的五子, 否则返回空.
 	 */
-    auto get_five_in_a_row() const -> std::optional<std::vector<sf::Vector2i>> {
+    [[nodiscard]] auto get_five_in_a_row() const
+        -> std::optional<std::vector<sf::Vector2i>> {
         const auto last_position = histories_.back();
         const Piece piece = board_[last_position.x][last_position.y];
 
-        const sf::Vector2i directions[8] = {
+        constexpr std::array<sf::Vector2i, 8> directions = {{
             {0, 1},
             {0, -1},
             {1, 0},
@@ -67,9 +70,9 @@ class Board {
             {1, 1},
             {-1, 1},
             {1, -1}
-        };
-        for (size_t direction_index = 0; direction_index < 8;
-             direction_index += 2) {
+        }};
+        for (size_t direction_index : std::views::iota(0uz, 8uz)
+                 | std::views::stride(2)) {
             std::vector<sf::Vector2i> pieces;
 
             auto add_pieces_on_direction = [&](const sf::Vector2i& direction) {
@@ -131,7 +134,7 @@ class Board {
 	 *
 	 * @return 返回棋子.
 	 */
-    auto get_piece(const sf::Vector2i& position) const -> Piece {
+    [[nodiscard]] auto get_piece(const sf::Vector2i& position) const -> Piece {
         return board_[position.x][position.y];
     }
 
@@ -140,7 +143,7 @@ class Board {
 	 *
 	 * @return 返回对应的棋盘坐标, 若坐标在棋盘外则返回空.
 	 */
-    auto window_to_board_position(sf::Vector2i position) const
+    [[nodiscard]] auto window_to_board_position(sf::Vector2i position) const
         -> std::optional<sf::Vector2i> {
         position.x = static_cast<int>(
             (position.x - position_.x) + (piece_offset_ / 2.f)
@@ -166,16 +169,16 @@ class Board {
 	 *
 	 * @return 返回对应的窗口坐标.
 	 */
-    auto board_to_window_position(const sf::Vector2f& position) const noexcept
-        -> sf::Vector2f {
+    [[nodiscard]] auto board_to_window_position(const sf::Vector2f& position
+    ) const noexcept -> sf::Vector2f {
         return position_ + position * piece_offset_;
     }
 
-    const auto& position() const noexcept {
+    [[nodiscard]] auto position() const noexcept -> const sf::Vector2f& {
         return position_;
     }
 
-    const auto& size() const noexcept {
+    [[nodiscard]] auto size() const noexcept -> const sf::Vector2i& {
         return size_;
     }
 

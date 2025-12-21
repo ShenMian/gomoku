@@ -5,11 +5,12 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <print>
+#include <ranges>
 #include <stdexcept>
-#include <unordered_map>
 
 #include "board.hpp"
 
@@ -35,28 +36,31 @@ enum Action : uint8_t {
     Undo = 1 << 5,
 };
 
-const std::unordered_map<sf::Keyboard::Key, Action> keyboard_actions = {
-    {sf::Keyboard::Key::W, Action::CursorMoveUp},
-    {sf::Keyboard::Key::S, Action::CursorMoveDown},
-    {sf::Keyboard::Key::A, Action::CursorMoveLeft},
-    {sf::Keyboard::Key::D, Action::CursorMoveRight},
-    {sf::Keyboard::Key::Up, Action::CursorMoveUp},
-    {sf::Keyboard::Key::Down, Action::CursorMoveDown},
-    {sf::Keyboard::Key::Left, Action::CursorMoveLeft},
-    {sf::Keyboard::Key::Right, Action::CursorMoveRight},
-    {sf::Keyboard::Key::Space, Action::PlacePiece},
-    {sf::Keyboard::Key::Backspace, Action::Undo},
-};
+constexpr std::array<std::pair<sf::Keyboard::Key, Action>, 10> keyboard_actions =
+    {{
+        {sf::Keyboard::Key::W, Action::CursorMoveUp},
+        {sf::Keyboard::Key::S, Action::CursorMoveDown},
+        {sf::Keyboard::Key::A, Action::CursorMoveLeft},
+        {sf::Keyboard::Key::D, Action::CursorMoveRight},
+        {sf::Keyboard::Key::Up, Action::CursorMoveUp},
+        {sf::Keyboard::Key::Down, Action::CursorMoveDown},
+        {sf::Keyboard::Key::Left, Action::CursorMoveLeft},
+        {sf::Keyboard::Key::Right, Action::CursorMoveRight},
+        {sf::Keyboard::Key::Space, Action::PlacePiece},
+        {sf::Keyboard::Key::Backspace, Action::Undo},
+    }};
 
-const std::unordered_map<unsigned int, Action> xbox_controller_actions = {
-    {0 /* A */, Action::PlacePiece},
-    {1 /* B */, Action::Undo},
-};
+constexpr std::array<std::pair<unsigned int, Action>, 2> xbox_controller_actions =
+    {{
+        {0 /* A */, Action::PlacePiece},
+        {1 /* B */, Action::Undo},
+    }};
 
-const std::unordered_map<unsigned int, Action> ps_controller_actions = {
-    {1 /* Cross */, Action::PlacePiece},
-    {2 /* Circle */, Action::Undo},
-};
+constexpr std::array<std::pair<unsigned int, Action>, 2> ps_controller_actions =
+    {{
+        {1 /* Cross */, Action::PlacePiece},
+        {2 /* Circle */, Action::Undo},
+    }};
 
 class Gomoku {
   public:
@@ -292,12 +296,12 @@ class Gomoku {
         reset();
     }
 
-    auto get_actions() const -> uint8_t {
+    [[nodiscard]] auto get_actions() const -> uint8_t {
         return get_mouse_actions() | get_keyboard_actions()
             | get_controller_actions();
     }
 
-    auto get_mouse_actions() const -> uint8_t {
+    [[nodiscard]] auto get_mouse_actions() const -> uint8_t {
         uint8_t actions = 0;
         if (board_.window_to_board_position(sf::Mouse::getPosition(window_))
                 .has_value()
@@ -307,7 +311,7 @@ class Gomoku {
         return actions;
     }
 
-    auto get_keyboard_actions() const -> uint8_t {
+    [[nodiscard]] auto get_keyboard_actions() const -> uint8_t {
         uint8_t actions = 0;
         for (const auto& [key, action] : keyboard_actions) {
             if (sf::Keyboard::isKeyPressed(key)) {
@@ -317,16 +321,16 @@ class Gomoku {
         return actions;
     }
 
-    auto get_controller_actions() const -> uint8_t {
+    [[nodiscard]] auto get_controller_actions() const -> uint8_t {
         uint8_t actions = 0;
-        for (int id = 0; id < 8; id++) {
+        for (unsigned int id : std::views::iota(0, 8)) {
             if (!sf::Joystick::isConnected(id)) {
                 continue;
             }
 
             constexpr uint16_t XBOX_VENDOR_ID = 0x045E;
             constexpr uint16_t PS_VENDOR_ID = 0x054C;
-            const std::unordered_map<unsigned int, Action>* controller_actions;
+            const std::array<std::pair<unsigned int, Action>, 2>* controller_actions;
             if (sf::Joystick::getIdentification(id).vendorId
                 == XBOX_VENDOR_ID) {
                 controller_actions = &xbox_controller_actions;
