@@ -112,7 +112,7 @@ class Gomoku {
             while (socket.connect(sf::IpAddress::resolve(ip).value(), port)
                    != sf::Socket::Status::Done) {
                 std::println("Retrying...");
-                   }
+            }
         } else if (choice == "2") {
             std::println(
                 "Local IP : {}",
@@ -361,9 +361,9 @@ class Gomoku {
 
     auto handle_cursor_move() -> void {
         // handle mouse movement
-        if (const auto result =
-                board_.window_to_board_position(sf::Mouse::getPosition(window_)
-                );
+        if (const auto result = board_.window_to_board_position(
+                sf::Mouse::getPosition(window_)
+            );
             result.has_value()) {
             cursor_position_ = result.value();
         }

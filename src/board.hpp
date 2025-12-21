@@ -238,8 +238,9 @@ class Board {
         star.setPosition(board_to_window_position({3.f, size_.y - 4.f}));
         window.draw(star);
 
-        star.setPosition(board_to_window_position({size_.x - 4.f, size_.y - 4.f}
-        ));
+        star.setPosition(
+            board_to_window_position({size_.x - 4.f, size_.y - 4.f})
+        );
         window.draw(star);
 
         // 绘制天元
@@ -252,9 +253,7 @@ class Board {
     auto draw_pieces(sf::RenderWindow& window) const -> void {
         for (size_t y = 0; y < board_.size(); y++) {
             for (size_t x = 0; x < board_[0].size(); x++) {
-                if (board_[x][y] != Piece::Empty) {
-                    draw_piece(window, sf::Vector2i(x, y), board_[x][y]);
-                }
+                draw_piece(window, sf::Vector2i(x, y), board_[x][y]);
             }
         }
     }
@@ -271,10 +270,16 @@ class Board {
         const sf::Vector2i& position,
         Piece piece
     ) const -> void {
+        if (piece == Piece::Empty) {
+            return;
+        }
+
         sf::CircleShape piece_shape(piece_diameter_ / 2.f, 50);
-        piece_shape.setOrigin({piece_shape.getRadius(), piece_shape.getRadius()}
+        piece_shape.setOrigin(
+            {piece_shape.getRadius(), piece_shape.getRadius()}
         );
-        piece_shape.setPosition(board_to_window_position(sf::Vector2f(position))
+        piece_shape.setPosition(
+            board_to_window_position(sf::Vector2f(position))
         );
 
         switch (piece) {
@@ -289,9 +294,6 @@ class Board {
             case Piece::Green:
                 piece_shape.setFillColor(sf::Color::Green);
                 break;
-
-            default:
-                throw std::logic_error("");
         }
 
         window.draw(piece_shape);
@@ -311,8 +313,9 @@ class Board {
         }
         sf::CircleShape mark(piece_diameter_ / 4.f / 2.f, 3);
         mark.setOrigin({mark.getRadius(), mark.getRadius()});
-        mark.setPosition(board_to_window_position(sf::Vector2f(histories_.back()
-        )));
+        mark.setPosition(
+            board_to_window_position(sf::Vector2f(histories_.back()))
+        );
         mark.setFillColor(sf::Color::Red);
         window.draw(mark);
     }
