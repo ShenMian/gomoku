@@ -318,7 +318,7 @@ class Gomoku {
         uint8_t actions = 0;
         for (int id = 0; id < 8; id++) {
             if (!sf::Joystick::isConnected(id)) {
-                break;
+                continue;
             }
 
             constexpr uint16_t XBOX_VENDOR_ID = 0x045E;
