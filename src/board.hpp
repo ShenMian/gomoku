@@ -7,7 +7,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <optional>
 
-enum class Piece { Empty, Black, White, Green };
+enum class Piece { Empty, Black, White, Highlight };
 
 class Board {
   public:
@@ -291,7 +291,7 @@ class Board {
                 piece_shape.setFillColor(sf::Color::Black);
                 break;
 
-            case Piece::Green:
+            case Piece::Highlight:
                 piece_shape.setFillColor(sf::Color::Green);
                 break;
         }

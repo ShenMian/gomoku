@@ -272,9 +272,12 @@ class Gomoku {
         const auto winner_piece = board_.get_piece(position);
         for (int i = 0; i < 10; i++) {
             for (const auto& pos : pieces.value()) {
-                board_.place(pos, i % 2 == 0 ? Piece::Green : winner_piece);
+                board_.place(pos, i % 2 == 0 ? Piece::Highlight : winner_piece);
             }
-            board_.place(position, i % 2 == 0 ? Piece::Green : winner_piece);
+            board_.place(
+                position,
+                i % 2 == 0 ? Piece::Highlight : winner_piece
+            );
 
             window_.clear(sf::Color(242, 208, 75));
             board_.draw(window_);
