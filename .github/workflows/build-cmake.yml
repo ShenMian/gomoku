@@ -25,6 +25,8 @@ jobs:
               libfreetype-dev libflac-dev libvorbis-dev libgl1-mesa-dev \
               libegl1-mesa-dev libfreetype-dev libharfbuzz-dev libmbedtls-dev \
               libssh2-1-dev
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
 
       - name: Setup clang (Windows)
         if: matrix.os == 'windows-latest'
