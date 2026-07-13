@@ -1,7 +1,7 @@
 # Copyright 2023-2025 ShenMian
 # License(Apache-2.0)
 
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.10)
 
 project(gomoku CXX)
 
@@ -10,7 +10,7 @@ set(BUILD_SHARED_LIBS FALSE)
 include(FetchContent)
 FetchContent_Declare(SFML
     GIT_REPOSITORY https://github.com/SFML/SFML.git
-    GIT_TAG 3.0.0)
+    GIT_TAG 3.1.0)
 FetchContent_MakeAvailable(SFML)
 
 add_executable(${PROJECT_NAME})
