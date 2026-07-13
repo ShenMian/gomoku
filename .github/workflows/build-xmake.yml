@@ -1,4 +1,4 @@
-﻿name: Build xmake
+name: Build xmake
 
 on: [push, pull_request]
 
@@ -21,7 +21,10 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt update
-          sudo apt install libudev-dev libx11-dev libxcursor-dev libxrandr-dev libgl1-mesa-dev libalut-dev libvorbis-dev libsndfile1-dev libsfml-dev
+          sudo apt install libxrandr-dev libxcursor-dev libxi-dev libudev-dev \
+              libfreetype-dev libflac-dev libvorbis-dev libgl1-mesa-dev \
+              libegl1-mesa-dev libfreetype-dev libharfbuzz-dev libmbedtls-dev \
+              libssh2-1-dev
 
       - name: Setup clang (Windows)
         if: matrix.os == 'windows-latest'
