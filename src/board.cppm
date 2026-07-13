@@ -64,18 +64,18 @@ export class Board {
         const auto last_position = histories_.back();
         const Piece piece = board_[last_position.x][last_position.y];
 
-        constexpr std::array<sf::Vector2i, 8> directions = {{
-            {0, 1},
-            {0, -1},
-            {1, 0},
-            {-1, 0},
-            {-1, -1},
-            {1, 1},
-            {-1, 1},
-            {1, -1}
-        }};
-        for (size_t direction_index : std::views::iota(0uz, 8uz)
-                 | std::views::stride(2)) {
+        constexpr std::array<sf::Vector2i, 8> directions = {
+            {{0, 1},
+             {0, -1},
+             {1, 0},
+             {-1, 0},
+             {-1, -1},
+             {1, 1},
+             {-1, 1},
+             {1, -1}}
+        };
+        for (size_t direction_index :
+             std::views::iota(0uz, 8uz) | std::views::stride(2)) {
             std::vector<sf::Vector2i> pieces;
 
             auto add_pieces_on_direction = [&](const sf::Vector2i& direction) {
@@ -172,8 +172,9 @@ export class Board {
 	 *
 	 * @return 返回对应的窗口坐标.
 	 */
-    [[nodiscard]] auto board_to_window_position(const sf::Vector2f& position
-    ) const noexcept -> sf::Vector2f {
+    [[nodiscard]] auto
+    board_to_window_position(const sf::Vector2f& position) const noexcept
+        -> sf::Vector2f {
         return position_ + position * piece_offset_;
     }
 

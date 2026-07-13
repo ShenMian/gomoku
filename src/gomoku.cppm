@@ -23,8 +23,7 @@ auto operator<<(sf::Packet& packet, const sf::Vector2i& position)
     return packet << position.x << position.y;
 }
 
-auto operator>>(sf::Packet& packet, sf::Vector2i& position)
-    -> sf::Packet& {
+auto operator>>(sf::Packet& packet, sf::Vector2i& position) -> sf::Packet& {
     return packet >> position.x >> position.y;
 }
 
@@ -40,8 +39,8 @@ enum Action : uint8_t {
     Undo = 1 << 5,
 };
 
-constexpr std::array<std::pair<sf::Keyboard::Key, Action>, 10> keyboard_actions =
-    {{
+constexpr std::array<std::pair<sf::Keyboard::Key, Action>, 10>
+    keyboard_actions = {{
         {sf::Keyboard::Key::W, Action::CursorMoveUp},
         {sf::Keyboard::Key::S, Action::CursorMoveDown},
         {sf::Keyboard::Key::A, Action::CursorMoveLeft},
@@ -54,8 +53,8 @@ constexpr std::array<std::pair<sf::Keyboard::Key, Action>, 10> keyboard_actions 
         {sf::Keyboard::Key::Backspace, Action::Undo},
     }};
 
-constexpr std::array<std::pair<unsigned int, Action>, 2> xbox_controller_actions =
-    {{
+constexpr std::array<std::pair<unsigned int, Action>, 2>
+    xbox_controller_actions = {{
         {0 /* A */, Action::PlacePiece},
         {1 /* B */, Action::Undo},
     }};
@@ -334,12 +333,14 @@ export class Gomoku {
 
             constexpr uint16_t XBOX_VENDOR_ID = 0x045E;
             constexpr uint16_t PS_VENDOR_ID = 0x054C;
-            const std::array<std::pair<unsigned int, Action>, 2>* controller_actions;
+            const std::array<std::pair<unsigned int, Action>, 2>*
+                controller_actions;
             if (sf::Joystick::getIdentification(id).vendorId
-                 == XBOX_VENDOR_ID) {
+                == XBOX_VENDOR_ID) {
                 controller_actions = &xbox_controller_actions;
-            } else if (sf::Joystick::getIdentification(id).vendorId
-                       == PS_VENDOR_ID) {
+            } else if (
+                sf::Joystick::getIdentification(id).vendorId == PS_VENDOR_ID
+            ) {
                 controller_actions = &ps_controller_actions;
             } else {
                 controller_actions = &xbox_controller_actions;

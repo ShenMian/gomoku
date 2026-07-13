@@ -1,10 +1,10 @@
 // Copyright 2023-2025 ShenMian
 // License(Apache-2.0)
 
-#include <print>
 #include <iostream>
-#include <string>
+#include <print>
 #include <stdexcept>
+#include <string>
 
 import gomoku;
 
