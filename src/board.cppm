@@ -1,17 +1,20 @@
 // Copyright 2023-2025 ShenMian
 // License(Apache-2.0)
 
-#pragma once
+module;
 
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <array>
 #include <optional>
 #include <ranges>
+#include <vector>
 
-enum class Piece { Empty, Black, White, Highlight };
+export module board;
 
-class Board {
+export enum class Piece { Empty, Black, White, Highlight };
+
+export class Board {
   public:
     Board(const sf::Vector2i& size = {15, 15}) : size_(size) {
         reset();

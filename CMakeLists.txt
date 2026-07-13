@@ -1,7 +1,7 @@
 # Copyright 2023-2025 ShenMian
 # License(Apache-2.0)
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.28)
 
 project(gomoku CXX)
 
@@ -14,7 +14,14 @@ FetchContent_Declare(SFML
 FetchContent_MakeAvailable(SFML)
 
 add_executable(${PROJECT_NAME})
-target_sources(${PROJECT_NAME} PRIVATE src/main.cpp src/gomoku.hpp src/board.hpp)
+target_sources(${PROJECT_NAME}
+  PRIVATE
+    src/main.cpp
+  PRIVATE FILE_SET CXX_MODULES
+  FILES
+    src/board.cppm
+    src/gomoku.cppm
+)
 target_link_libraries(${PROJECT_NAME} PRIVATE SFML::Graphics SFML::Network)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 

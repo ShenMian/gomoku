@@ -2,8 +2,11 @@
 // License(Apache-2.0)
 
 #include <print>
+#include <iostream>
+#include <string>
+#include <stdexcept>
 
-#include "gomoku.hpp"
+import gomoku;
 
 auto wait_for_enter() -> void {
     std::println("Press enter to exit...");

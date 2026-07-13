@@ -1,25 +1,29 @@
 // Copyright 2023-2025 ShenMian
 // License(Apache-2.0)
 
-#pragma once
+module;
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <iostream>
 #include <print>
 #include <ranges>
 #include <stdexcept>
+#include <string>
 
-#include "board.hpp"
+export module gomoku;
 
-inline auto operator<<(sf::Packet& packet, const sf::Vector2i& position)
+import board;
+
+auto operator<<(sf::Packet& packet, const sf::Vector2i& position)
     -> sf::Packet& {
     return packet << position.x << position.y;
 }
 
-inline auto operator>>(sf::Packet& packet, sf::Vector2i& position)
+auto operator>>(sf::Packet& packet, sf::Vector2i& position)
     -> sf::Packet& {
     return packet >> position.x >> position.y;
 }
@@ -62,7 +66,7 @@ constexpr std::array<std::pair<unsigned int, Action>, 2> ps_controller_actions =
         {2 /* Circle */, Action::Undo},
     }};
 
-class Gomoku {
+export class Gomoku {
   public:
     auto run() -> void {
         reset();
@@ -332,7 +336,7 @@ class Gomoku {
             constexpr uint16_t PS_VENDOR_ID = 0x054C;
             const std::array<std::pair<unsigned int, Action>, 2>* controller_actions;
             if (sf::Joystick::getIdentification(id).vendorId
-                == XBOX_VENDOR_ID) {
+                 == XBOX_VENDOR_ID) {
                 controller_actions = &xbox_controller_actions;
             } else if (sf::Joystick::getIdentification(id).vendorId
                        == PS_VENDOR_ID) {
